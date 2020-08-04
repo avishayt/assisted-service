@@ -2239,6 +2239,11 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
         "generator_version": {
           "description": "Image generator version",
           "type": "string"
@@ -2246,6 +2251,9 @@ func init() {
         "proxy_url": {
           "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
           "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer"
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation",
@@ -4748,6 +4756,11 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
         "generator_version": {
           "description": "Image generator version",
           "type": "string"
@@ -4755,6 +4768,10 @@ func init() {
         "proxy_url": {
           "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
           "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation",
