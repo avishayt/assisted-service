@@ -121,3 +121,18 @@ func (mr *MockAPIMockRecorder) UpdateObjectTag(ctx, objectName, key, value inter
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectTag", reflect.TypeOf((*MockAPI)(nil).UpdateObjectTag), ctx, objectName, key, value)
 }
+
+// GetObjectSizeBytes mocks base method
+func (m *MockAPI) GetObjectSizeBytes(ctx context.Context, objectName string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObjectSizeBytes", ctx, objectName)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetObjectSizeBytes indicates an expected call of GetObjectSizeBytes
+func (mr *MockAPIMockRecorder) GetObjectSizeBytes(ctx, objectName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectSizeBytes", reflect.TypeOf((*MockAPI)(nil).GetObjectSizeBytes), ctx, objectName)
+}
