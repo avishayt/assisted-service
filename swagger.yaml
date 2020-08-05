@@ -217,6 +217,10 @@ paths:
           description: Error.
           schema:
             $ref: '#/definitions/error'
+        409:
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
         500:
           description: Error.
           schema:
@@ -1442,6 +1446,8 @@ definitions:
       size_bytes:
         type: integer
         minimum: 0
+      download_url:
+        type: string
       generator_version:
         type: string
         description: Image generator version
