@@ -32,6 +32,7 @@ type API interface {
 	DeleteObject(ctx context.Context, objectName string) error
 	UpdateObjectTag(ctx context.Context, objectName, key, value string) (bool, error)
 	GetObjectSizeBytes(ctx context.Context, objectName string) (int64, error)
+	GeneratePresignedDownloadURL(ctx context.Context, objectName string, duration time.Duration) (string, error)
 }
 
 var _ API = &S3Client{}
@@ -228,4 +229,19 @@ func (c *S3Client) GetObjectSizeBytes(ctx context.Context, objectName string) (i
 		return 0, err
 	}
 	return *headResp.ContentLength, nil
+}
+
+func (c *S3Client) GeneratePresignedDownloadURL(ctx context.Context, objectName string, duration time.Duration) (string, error) {
+	log := logutil.FromContext(ctx, c.log)
+	req, _ := c.Client.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(c.cfg.S3Bucket),
+		Key:    aws.String(objectName),
+	})
+	urlStr, err := req.Presign(duration)
+	if err != nil {
+		err = errors.Wrapf(err, "Failed to create presigned download URL for object %s in bucket %s", objectName, c.cfg.S3Bucket)
+		log.Error(err)
+		return "", err
+	}
+	return urlStr, nil
 }
