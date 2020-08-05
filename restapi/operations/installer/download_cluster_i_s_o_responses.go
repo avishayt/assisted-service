@@ -144,6 +144,50 @@ func (o *DownloadClusterISONotFound) WriteResponse(rw http.ResponseWriter, produ
 	}
 }
 
+// DownloadClusterISOConflictCode is the HTTP code returned for type DownloadClusterISOConflict
+const DownloadClusterISOConflictCode int = 409
+
+/*DownloadClusterISOConflict Error.
+
+swagger:response downloadClusterISOConflict
+*/
+type DownloadClusterISOConflict struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.Error `json:"body,omitempty"`
+}
+
+// NewDownloadClusterISOConflict creates DownloadClusterISOConflict with default headers values
+func NewDownloadClusterISOConflict() *DownloadClusterISOConflict {
+
+	return &DownloadClusterISOConflict{}
+}
+
+// WithPayload adds the payload to the download cluster i s o conflict response
+func (o *DownloadClusterISOConflict) WithPayload(payload *models.Error) *DownloadClusterISOConflict {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the download cluster i s o conflict response
+func (o *DownloadClusterISOConflict) SetPayload(payload *models.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *DownloadClusterISOConflict) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(409)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
 // DownloadClusterISOInternalServerErrorCode is the HTTP code returned for type DownloadClusterISOInternalServerError
 const DownloadClusterISOInternalServerErrorCode int = 500
 

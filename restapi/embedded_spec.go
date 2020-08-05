@@ -565,6 +565,12 @@ func init() {
               "$ref": "#/definitions/error"
             }
           },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
           "500": {
             "description": "Error.",
             "schema": {
@@ -2241,6 +2247,9 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
+        "download_url": {
+          "type": "string"
+        },
         "expires_at": {
           "type": "string",
           "format": "date-time",
@@ -3073,6 +3082,12 @@ func init() {
             }
           },
           "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
             "description": "Error.",
             "schema": {
               "$ref": "#/definitions/error"
@@ -4759,6 +4774,9 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "download_url": {
+          "type": "string"
         },
         "expires_at": {
           "type": "string",

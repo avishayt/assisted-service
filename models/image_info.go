@@ -21,6 +21,9 @@ type ImageInfo struct {
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
 
+	// download url
+	DownloadURL string `json:"download_url,omitempty"`
+
 	// expires at
 	// Format: date-time
 	ExpiresAt strfmt.DateTime `json:"expires_at,omitempty" gorm:"type:timestamp with time zone"`

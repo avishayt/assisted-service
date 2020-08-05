@@ -42,6 +42,12 @@ func (o *DownloadClusterISOReader) ReadResponse(response runtime.ClientResponse,
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewDownloadClusterISOConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewDownloadClusterISOInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -142,6 +148,39 @@ func (o *DownloadClusterISONotFound) GetPayload() *models.Error {
 }
 
 func (o *DownloadClusterISONotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewDownloadClusterISOConflict creates a DownloadClusterISOConflict with default headers values
+func NewDownloadClusterISOConflict() *DownloadClusterISOConflict {
+	return &DownloadClusterISOConflict{}
+}
+
+/*DownloadClusterISOConflict handles this case with default header values.
+
+Error.
+*/
+type DownloadClusterISOConflict struct {
+	Payload *models.Error
+}
+
+func (o *DownloadClusterISOConflict) Error() string {
+	return fmt.Sprintf("[GET /clusters/{cluster_id}/downloads/image][%d] downloadClusterISOConflict  %+v", 409, o.Payload)
+}
+
+func (o *DownloadClusterISOConflict) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *DownloadClusterISOConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Error)
 
