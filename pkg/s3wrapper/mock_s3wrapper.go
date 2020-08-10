@@ -79,6 +79,22 @@ func (mr *MockAPIMockRecorder) Download(ctx, objectName interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Download", reflect.TypeOf((*MockAPI)(nil).Download), ctx, objectName)
 }
 
+// DownloadFromPublicURL mocks base method
+func (m *MockAPI) DownloadFromPublicURL(ctx context.Context, location string) (io.ReadCloser, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownloadFromPublicURL", ctx, location)
+	ret0, _ := ret[0].(io.ReadCloser)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// DownloadFromPublicURL indicates an expected call of DownloadFromPublicURL
+func (mr *MockAPIMockRecorder) DownloadFromPublicURL(ctx, location interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFromPublicURL", reflect.TypeOf((*MockAPI)(nil).DownloadFromPublicURL), ctx, location)
+}
+
 // DoesObjectExist mocks base method
 func (m *MockAPI) DoesObjectExist(ctx context.Context, objectName string) (bool, error) {
 	m.ctrl.T.Helper()
@@ -106,21 +122,6 @@ func (m *MockAPI) DeleteObject(ctx context.Context, objectName string) error {
 func (mr *MockAPIMockRecorder) DeleteObject(ctx, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockAPI)(nil).DeleteObject), ctx, objectName)
-}
-
-// UpdateObjectTag mocks base method
-func (m *MockAPI) UpdateObjectTag(ctx context.Context, objectName, key, value string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateObjectTag", ctx, objectName, key, value)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateObjectTag indicates an expected call of UpdateObjectTag
-func (mr *MockAPIMockRecorder) UpdateObjectTag(ctx, objectName, key, value interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectTag", reflect.TypeOf((*MockAPI)(nil).UpdateObjectTag), ctx, objectName, key, value)
 }
 
 // GetObjectSizeBytes mocks base method
@@ -151,4 +152,31 @@ func (m *MockAPI) GeneratePresignedDownloadURL(ctx context.Context, objectName s
 func (mr *MockAPIMockRecorder) GeneratePresignedDownloadURL(ctx, objectName, duration interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeneratePresignedDownloadURL", reflect.TypeOf((*MockAPI)(nil).GeneratePresignedDownloadURL), ctx, objectName, duration)
+}
+
+// UpdateObjectTimestamp mocks base method
+func (m *MockAPI) UpdateObjectTimestamp(ctx context.Context, objectName string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateObjectTimestamp", ctx, objectName)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateObjectTimestamp indicates an expected call of UpdateObjectTimestamp
+func (mr *MockAPIMockRecorder) UpdateObjectTimestamp(ctx, objectName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectTimestamp", reflect.TypeOf((*MockAPI)(nil).UpdateObjectTimestamp), ctx, objectName)
+}
+
+// ExpireObjects mocks base method
+func (m *MockAPI) ExpireObjects(ctx context.Context, prefix string, deleteTime time.Duration, callback func(context.Context, string)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExpireObjects", ctx, prefix, deleteTime, callback)
+}
+
+// ExpireObjects indicates an expected call of ExpireObjects
+func (mr *MockAPIMockRecorder) ExpireObjects(ctx, prefix, deleteTime, callback interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpireObjects", reflect.TypeOf((*MockAPI)(nil).ExpireObjects), ctx, prefix, deleteTime, callback)
 }

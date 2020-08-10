@@ -320,49 +320,38 @@ func (b *bareMetalInventory) DeregisterCluster(ctx context.Context, params insta
 func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params installer.DownloadClusterISOParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var cluster common.Cluster
+	var url string
 
 	if err := b.db.First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
 		log.WithError(err).Errorf("failed to get cluster %s", params.ClusterID)
 		return installer.NewDownloadClusterISONotFound().
 			WithPayload(common.GenerateError(http.StatusNotFound, err))
 	}
-	if cluster.ImageInfo.DownloadURL == "" {
-		log.Errorf("no download URL set for cluster %s", params.ClusterID)
-		return installer.NewDownloadClusterISOConflict().
-			WithPayload(common.GenerateError(http.StatusConflict, errors.New("No download URL set for cluster")))
-	}
 
-	log.Info("Image URL: ", cluster.ImageInfo.DownloadURL)
-	resp, err := http.Get(cluster.ImageInfo.DownloadURL)
+	if b.Config.DeployTarget == "k8s" {
+		if cluster.ImageInfo.DownloadURL == "" {
+			log.Errorf("no download URL set for cluster %s", params.ClusterID)
+			return installer.NewDownloadClusterISOConflict().
+				WithPayload(common.GenerateError(http.StatusConflict, errors.New("No download URL set for cluster")))
+		}
+		url = cluster.ImageInfo.DownloadURL
+	} else {
+		// on-prem
+		url = getImageName(params.ClusterID)
+	}
+	stream, contentLength, err := b.s3Client.DownloadFromPublicURL(ctx, url)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to get ISO for cluster %s", cluster.ID.String())
-		msg := "Failed to download image: error fetching from storage backend"
-		b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError, msg, time.Now())
+		log.WithError(err).Errorf("Failed to download image for cluster %s", cluster.ID.String())
+		b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError,
+			fmt.Sprintf("Failed to download image: %s", err), time.Now())
 		return installer.NewDownloadClusterISOInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
-	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.WithError(fmt.Errorf("%d - %s", resp.StatusCode, string(body))).
-			Errorf("Failed to get ISO for cluster %s", cluster.ID.String())
-		if resp.StatusCode == http.StatusNotFound {
-			msg := "Failed to download image: the image was not found (perhaps it expired) - please generate the image and try again"
-			b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError, msg, time.Now())
-			return installer.NewDownloadClusterISONotFound().
-				WithPayload(common.GenerateError(http.StatusNotFound, errors.New("The image was not found "+
-					"(perhaps it expired) - please generate the image and try again")))
-		}
-		msg := fmt.Sprintf("Failed to download image: error fetching from storage backend (%d)", resp.StatusCode)
-		b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError, msg, time.Now())
-		return installer.NewDownloadClusterISOInternalServerError().
-			WithPayload(common.GenerateError(http.StatusInternalServerError, errors.New(string(body))))
-	}
 	b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityInfo, "Started image download", time.Now())
 
-	return filemiddleware.NewResponder(installer.NewDownloadClusterISOOK().WithPayload(resp.Body),
+	return filemiddleware.NewResponder(installer.NewDownloadClusterISOOK().WithPayload(stream),
 		fmt.Sprintf("cluster-%s-discovery.iso", params.ClusterID.String()),
-		resp.ContentLength)
+		contentLength)
 }
 
 func (b *bareMetalInventory) updateImageInfoPostUpload(ctx context.Context, cluster *common.Cluster) error {
@@ -451,7 +440,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 		cluster.ImageInfo.GeneratorVersion == b.Config.ImageBuilder {
 		var err error
 		imgName := getImageName(params.ClusterID)
-		imageExists, err = b.s3Client.UpdateObjectTag(ctx, imgName, "create_sec_since_epoch", strconv.FormatInt(now.Unix(), 10))
+		imageExists, err = b.s3Client.UpdateObjectTimestamp(ctx, imgName)
 		if err != nil {
 			log.WithError(err).Errorf("failed to contact storage backend")
 			msg := "Failed to generate image: error contacting storage backend"
