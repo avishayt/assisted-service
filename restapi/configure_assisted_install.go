@@ -15,7 +15,6 @@ import (
 	"github.com/go-openapi/runtime/security"
 
 	"github.com/openshift/assisted-service/restapi/operations"
-	"github.com/openshift/assisted-service/restapi/operations/events"
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	"github.com/openshift/assisted-service/restapi/operations/managed_domains"
 	"github.com/openshift/assisted-service/restapi/operations/versions"
@@ -24,14 +23,6 @@ import (
 type contextKey string
 
 const AuthKey contextKey = "Auth"
-
-//go:generate mockery -name EventsAPI -inpkg
-
-/* EventsAPI  */
-type EventsAPI interface {
-	/* ListEvents Lists events for an entity_id */
-	ListEvents(ctx context.Context, params events.ListEventsParams) middleware.Responder
-}
 
 //go:generate mockery -name InstallerAPI -inpkg
 
@@ -91,6 +82,9 @@ type InstallerAPI interface {
 	/* ListClusters Retrieves the list of OpenShift bare metal clusters. */
 	ListClusters(ctx context.Context, params installer.ListClustersParams) middleware.Responder
 
+	/* ListEvents Lists events for a cluster */
+	ListEvents(ctx context.Context, params installer.ListEventsParams) middleware.Responder
+
 	/* ListHosts Retrieves the list of OpenShift bare metal hosts. */
 	ListHosts(ctx context.Context, params installer.ListHostsParams) middleware.Responder
 
@@ -140,7 +134,6 @@ type VersionsAPI interface {
 
 // Config is configuration for Handler
 type Config struct {
-	EventsAPI
 	InstallerAPI
 	ManagedDomainsAPI
 	VersionsAPI
@@ -310,10 +303,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx = storeAuth(ctx, principal)
 		return c.VersionsAPI.ListComponentVersions(ctx, params)
 	})
-	api.EventsListEventsHandler = events.ListEventsHandlerFunc(func(params events.ListEventsParams, principal interface{}) middleware.Responder {
+	api.InstallerListEventsHandler = installer.ListEventsHandlerFunc(func(params installer.ListEventsParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
-		return c.EventsAPI.ListEvents(ctx, params)
+		return c.InstallerAPI.ListEvents(ctx, params)
 	})
 	api.InstallerListHostsHandler = installer.ListHostsHandlerFunc(func(params installer.ListHostsParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()

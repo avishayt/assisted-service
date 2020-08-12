@@ -73,6 +73,9 @@ type API interface {
 	   ListClusters retrieves the list of open shift bare metal clusters*/
 	ListClusters(ctx context.Context, params *ListClustersParams) (*ListClustersOK, error)
 	/*
+	   ListEvents lists events for a cluster*/
+	ListEvents(ctx context.Context, params *ListEventsParams) (*ListEventsOK, error)
+	/*
 	   ListHosts retrieves the list of open shift bare metal hosts*/
 	ListHosts(ctx context.Context, params *ListHostsParams) (*ListHostsOK, error)
 	/*
@@ -569,6 +572,31 @@ func (a *Client) ListClusters(ctx context.Context, params *ListClustersParams) (
 		return nil, err
 	}
 	return result.(*ListClustersOK), nil
+
+}
+
+/*
+ListEvents lists events for a cluster
+*/
+func (a *Client) ListEvents(ctx context.Context, params *ListEventsParams) (*ListEventsOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "ListEvents",
+		Method:             "GET",
+		PathPattern:        "/clusters/{cluster_id}/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &ListEventsReader{formats: a.formats},
+		AuthInfo:           a.authInfo,
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListEventsOK), nil
 
 }
 

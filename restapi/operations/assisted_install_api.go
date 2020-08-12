@@ -19,7 +19,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"github.com/openshift/assisted-service/restapi/operations/events"
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	"github.com/openshift/assisted-service/restapi/operations/managed_domains"
 	"github.com/openshift/assisted-service/restapi/operations/versions"
@@ -106,8 +105,8 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		VersionsListComponentVersionsHandler: versions.ListComponentVersionsHandlerFunc(func(params versions.ListComponentVersionsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation versions.ListComponentVersions has not yet been implemented")
 		}),
-		EventsListEventsHandler: events.ListEventsHandlerFunc(func(params events.ListEventsParams, principal interface{}) middleware.Responder {
-			return middleware.NotImplemented("operation events.ListEvents has not yet been implemented")
+		InstallerListEventsHandler: installer.ListEventsHandlerFunc(func(params installer.ListEventsParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation installer.ListEvents has not yet been implemented")
 		}),
 		InstallerListHostsHandler: installer.ListHostsHandlerFunc(func(params installer.ListHostsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.ListHosts has not yet been implemented")
@@ -242,8 +241,8 @@ type AssistedInstallAPI struct {
 	InstallerListClustersHandler installer.ListClustersHandler
 	// VersionsListComponentVersionsHandler sets the operation handler for the list component versions operation
 	VersionsListComponentVersionsHandler versions.ListComponentVersionsHandler
-	// EventsListEventsHandler sets the operation handler for the list events operation
-	EventsListEventsHandler events.ListEventsHandler
+	// InstallerListEventsHandler sets the operation handler for the list events operation
+	InstallerListEventsHandler installer.ListEventsHandler
 	// InstallerListHostsHandler sets the operation handler for the list hosts operation
 	InstallerListHostsHandler installer.ListHostsHandler
 	// ManagedDomainsListManagedDomainsHandler sets the operation handler for the list managed domains operation
@@ -412,8 +411,8 @@ func (o *AssistedInstallAPI) Validate() error {
 	if o.VersionsListComponentVersionsHandler == nil {
 		unregistered = append(unregistered, "versions.ListComponentVersionsHandler")
 	}
-	if o.EventsListEventsHandler == nil {
-		unregistered = append(unregistered, "events.ListEventsHandler")
+	if o.InstallerListEventsHandler == nil {
+		unregistered = append(unregistered, "installer.ListEventsHandler")
 	}
 	if o.InstallerListHostsHandler == nil {
 		unregistered = append(unregistered, "installer.ListHostsHandler")
@@ -632,7 +631,7 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/events/{entity_id}"] = events.NewListEvents(o.context, o.EventsListEventsHandler)
+	o.handlers["GET"]["/clusters/{cluster_id}/events"] = installer.NewListEvents(o.context, o.InstallerListEventsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

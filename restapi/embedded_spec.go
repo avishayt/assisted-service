@@ -1043,6 +1043,62 @@ func init() {
         }
       }
     },
+    "/clusters/{cluster_id}/events": {
+      "get": {
+        "tags": [
+          "installer"
+        ],
+        "summary": "Lists events for a cluster",
+        "operationId": "ListEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "host_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/clusters/{cluster_id}/free_addresses": {
       "get": {
         "tags": [
@@ -1964,56 +2020,6 @@ func init() {
           }
         }
       }
-    },
-    "/events/{entity_id}": {
-      "get": {
-        "tags": [
-          "events"
-        ],
-        "summary": "Lists events for an entity_id",
-        "operationId": "ListEvents",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "name": "entity_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/event-list"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -2614,14 +2620,14 @@ func init() {
     "event": {
       "type": "object",
       "required": [
-        "entity_id",
+        "cluster_id",
         "severity",
         "message",
         "event_time"
       ],
       "properties": {
-        "entity_id": {
-          "description": "Unique identifier of the object this event relates to.",
+        "cluster_id": {
+          "description": "Unique identifier of the cluster this event relates to.",
           "type": "string",
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"index\""
@@ -2630,6 +2636,11 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "host_id": {
+          "description": "Unique identifier of the host this event relates to.",
+          "type": "string",
+          "format": "uuid"
         },
         "message": {
           "type": "string",
@@ -4329,6 +4340,62 @@ func init() {
         }
       }
     },
+    "/clusters/{cluster_id}/events": {
+      "get": {
+        "tags": [
+          "installer"
+        ],
+        "summary": "Lists events for a cluster",
+        "operationId": "ListEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "host_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/clusters/{cluster_id}/free_addresses": {
       "get": {
         "tags": [
@@ -5250,56 +5317,6 @@ func init() {
           }
         }
       }
-    },
-    "/events/{entity_id}": {
-      "get": {
-        "tags": [
-          "events"
-        ],
-        "summary": "Lists events for an entity_id",
-        "operationId": "ListEvents",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "name": "entity_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/event-list"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -5906,14 +5923,14 @@ func init() {
     "event": {
       "type": "object",
       "required": [
-        "entity_id",
+        "cluster_id",
         "severity",
         "message",
         "event_time"
       ],
       "properties": {
-        "entity_id": {
-          "description": "Unique identifier of the object this event relates to.",
+        "cluster_id": {
+          "description": "Unique identifier of the cluster this event relates to.",
           "type": "string",
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"index\""
@@ -5922,6 +5939,11 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "host_id": {
+          "description": "Unique identifier of the host this event relates to.",
+          "type": "string",
+          "format": "uuid"
         },
         "message": {
           "type": "string",
