@@ -47,7 +47,7 @@ var _ = Describe("insufficient_state", func() {
 			Status: swag.String(currentState),
 		}}
 
-		mockEvents.EXPECT().AddEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+		mockEvents.EXPECT().AddEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 		replyErr := manager.RegisterCluster(ctx, &cluster)
 		Expect(replyErr).Should(BeNil())
 		Expect(swag.StringValue(cluster.Status)).Should(Equal(models.ClusterStatusInsufficient))

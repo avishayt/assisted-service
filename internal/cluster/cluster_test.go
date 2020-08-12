@@ -494,7 +494,7 @@ var _ = Describe("CancelInstallation", func() {
 			Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
 			mockMetric.EXPECT().ClusterInstallationFinished(gomock.Any(), "canceled", c.OpenshiftVersion, c.InstallStartedAt)
 			Expect(state.CancelInstallation(ctx, &c, "some reason", db)).ShouldNot(HaveOccurred())
-			events, err := eventsHandler.GetEvents(c.ID.String())
+			events, err := eventsHandler.GetEvents(*c.ID, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(events)).ShouldNot(Equal(0))
 			cancelEvent := events[len(events)-1]
@@ -507,7 +507,7 @@ var _ = Describe("CancelInstallation", func() {
 			Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
 			mockMetric.EXPECT().ClusterInstallationFinished(gomock.Any(), "canceled", c.OpenshiftVersion, c.InstallStartedAt)
 			Expect(state.CancelInstallation(ctx, &c, "some reason", db)).ShouldNot(HaveOccurred())
-			events, err := eventsHandler.GetEvents(c.ID.String())
+			events, err := eventsHandler.GetEvents(*c.ID, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(events)).ShouldNot(Equal(0))
 			cancelEvent := events[len(events)-1]
@@ -524,7 +524,7 @@ var _ = Describe("CancelInstallation", func() {
 	Context("invalid_cancel_installation", func() {
 		It("nothing_to_cancel", func() {
 			Expect(state.CancelInstallation(ctx, &c, "some reason", db)).Should(HaveOccurred())
-			events, err := eventsHandler.GetEvents(c.ID.String())
+			events, err := eventsHandler.GetEvents(*c.ID, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(events)).ShouldNot(Equal(0))
 			cancelEvent := events[len(events)-1]
@@ -563,7 +563,7 @@ var _ = Describe("ResetCluster", func() {
 		Expect(state.ResetCluster(ctx, &c, "some reason", db)).ShouldNot(HaveOccurred())
 		db.First(&c, "id = ?", c.ID)
 		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInsufficient))
-		events, err := eventsHandler.GetEvents(c.ID.String())
+		events, err := eventsHandler.GetEvents(*c.ID, nil)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(len(events)).ShouldNot(Equal(0))
 		resetEvent := events[len(events)-1]
@@ -580,7 +580,7 @@ var _ = Describe("ResetCluster", func() {
 		Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
 		reply := state.ResetCluster(ctx, &c, "some reason", db)
 		Expect(int(reply.StatusCode())).Should(Equal(http.StatusConflict))
-		events, err := eventsHandler.GetEvents(c.ID.String())
+		events, err := eventsHandler.GetEvents(*c.ID, nil)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(len(events)).ShouldNot(Equal(0))
 		resetEvent := events[len(events)-1]

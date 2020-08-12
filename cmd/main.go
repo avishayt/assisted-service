@@ -150,8 +150,6 @@ func main() {
 
 	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, generator, eventsHandler, s3Client, metricsManager)
 
-	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))
-
 	if Options.DeployTarget == "k8s" {
 		expirer := imgexpirer.NewManager(log, s3Client.Client, Options.S3Config.S3Bucket, Options.BMConfig.ImageExpirationTime, eventsHandler)
 		imageExpirationMonitor := thread.New(
@@ -167,7 +165,6 @@ func main() {
 		AuthUserAuth:        authHandler.AuthUserAuth,
 		APIKeyAuthenticator: authHandler.CreateAuthenticator(),
 		InstallerAPI:        bm,
-		EventsAPI:           events,
 		Logger:              log.Printf,
 		VersionsAPI:         versionHandler,
 		ManagedDomainsAPI:   domainHandler,

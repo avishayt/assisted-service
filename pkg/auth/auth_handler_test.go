@@ -113,7 +113,6 @@ func TestAuth(t *testing.T) {
 				AuthUserAuth:        AuthHandler.AuthUserAuth,
 				APIKeyAuthenticator: AuthHandler.CreateAuthenticator(),
 				InstallerAPI:        fakeInventory{},
-				EventsAPI:           nil,
 				Logger:              logrus.Printf,
 				VersionsAPI:         nil,
 				ManagedDomainsAPI:   nil,
@@ -271,6 +270,10 @@ func (f fakeInventory) UpdateHostInstallProgress(ctx context.Context, params ins
 }
 
 func (f fakeInventory) UploadClusterIngressCert(ctx context.Context, params installer.UploadClusterIngressCertParams) middleware.Responder {
+	panic("Implement Me!")
+}
+
+func (f fakeInventory) ListEvents(ctx context.Context, params installer.ListEventsParams) middleware.Responder {
 	panic("Implement Me!")
 }
 

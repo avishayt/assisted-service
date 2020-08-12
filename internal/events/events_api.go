@@ -29,16 +29,23 @@ func NewApi(handler Handler, log logrus.FieldLogger) *Api {
 
 func (a *Api) ListEvents(ctx context.Context, params events.ListEventsParams) middleware.Responder {
 	log := logutil.FromContext(ctx, a.log)
-	evs, err := a.handler.GetEvents(params.EntityID.String())
+	var hostID string
+	if params.HostID != nil {
+		hostID = (*params.HostID).String()
+	} else {
+		hostID = "<none>"
+	}
+	evs, err := a.handler.GetEvents(params.ClusterID, params.HostID)
 	if err != nil {
-		log.Errorf("failed to get events for id %s ", params.EntityID.String())
+		log.Errorf("failed to get events for cluster %s host %s", params.ClusterID.String(), hostID)
 		return events.NewListEventsInternalServerError().
 			WithPayload(common.GenerateInternalFromError(err))
 	}
 	ret := make(models.EventList, len(evs))
 	for i, ev := range evs {
 		ret[i] = &models.Event{
-			EntityID:  ev.EntityID,
+			ClusterID: ev.ClusterID,
+			HostID:    ev.HostID,
 			Severity:  ev.Severity,
 			EventTime: ev.EventTime,
 			Message:   ev.Message,
