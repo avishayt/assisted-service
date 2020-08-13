@@ -27,6 +27,10 @@ func NewFSClient(basedir string, logger *logrus.Logger) *FSClient {
 	return &FSClient{log: logger, basedir: basedir}
 }
 
+func (c *FSClient) IsAwsS3() bool {
+	return false
+}
+
 func (f *FSClient) CreateBucket() error {
 	return nil
 }
@@ -45,6 +49,28 @@ func (f *FSClient) Upload(ctx context.Context, data []byte, objectName string) e
 		return err
 	}
 	return nil
+}
+
+func (f *FSClient) UploadFile(ctx context.Context, filePath, objectName string) error {
+	log := logutil.FromContext(ctx, f.log)
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to open file %s for upload", filePath)
+		log.Error(err)
+		return err
+	}
+	return f.Upload(ctx, data, objectName)
+}
+
+func (f *FSClient) UploadStream(ctx context.Context, reader io.Reader, objectName string) error {
+	log := logutil.FromContext(ctx, f.log)
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to read stream for upload to %s", objectName)
+		log.Error(err)
+		return err
+	}
+	return f.Upload(ctx, data, objectName)
 }
 
 func (f *FSClient) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error) {
