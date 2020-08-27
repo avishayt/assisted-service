@@ -3,6 +3,7 @@ package s3wrapper
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	logutil "github.com/openshift/assisted-service/pkg/log"
-	"github.com/prometheus/common/log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -38,7 +38,7 @@ type API interface {
 	CreateBucket() error
 	Upload(ctx context.Context, data []byte, objectName string) error
 	UploadStream(ctx context.Context, reader io.Reader, objectName string) error
-	UploadFile(ctx context.Context, filePath, objectName string) error
+	UploadFile(ctx context.Context, ignitionConfig, objectName string) error
 	UploadISO(ctx context.Context, filePath, objectName string) error
 	Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error)
 	DoesObjectExist(ctx context.Context, objectName string) (bool, error)
@@ -162,98 +162,97 @@ func (c *S3Client) UploadFile(ctx context.Context, filePath, objectName string) 
 	return c.UploadStream(ctx, reader, objectName)
 }
 
-func (c *S3Client) UploadISO(ctx context.Context, filePath, objectName string) error {
-	baseObjectKey := "livecd.iso"
-	file, err := os.Open(filePath)
-	if err != nil {
-		err = errors.Wrapf(err, "Unable to open file %s for upload", filePath)
+func (c *S3Client) UploadISO(ctx context.Context, ignitionConfig, objectPrefix string) error {
+	log := logutil.FromContext(ctx, c.log)
+	baseObjectName := "livecd.iso"
+	ignitionObjectName := fmt.Sprintf("%s-ignition.gz", objectPrefix)
+	magicObjectName := fmt.Sprintf("%s.magic", objectPrefix)
+	objectName := fmt.Sprintf("%s.iso", objectPrefix)
+
+	var gzippedBuffer bytes.Buffer
+	gz := gzip.NewWriter(&gzippedBuffer)
+	if _, err := gz.Write([]byte(ignitionConfig)); err != nil {
+		err = errors.Wrapf(err, "Failed to gzip ignition config")
 		log.Error(err)
 		return err
 	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Errorf("Unable to close file %s", filePath)
-		}
-	}()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		err = errors.Wrapf(err, "Unable to get information of file %s for upload", filePath)
+	if err := gz.Close(); err != nil {
+		err = errors.Wrapf(err, "Failed to gzip ignition config")
 		log.Error(err)
 		return err
 	}
 
-	objectSize, err := c.GetObjectSizeBytes(ctx, baseObjectKey)
+	if err := c.Upload(ctx, gzippedBuffer.Bytes(), ignitionObjectName); err != nil {
+		err = errors.Wrapf(err, "Failed to upload ignition object %s", ignitionObjectName)
+		log.Error(err)
+		return err
+	}
+
+	ignitionObjectSize, err := c.GetObjectSizeBytes(ctx, baseObjectName)
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to get ignition object size")
+		log.Error(err)
+		return err
+	}
+
+	baseObjectSize, err := c.GetObjectSizeBytes(ctx, baseObjectName)
 	if err != nil {
 		err = errors.Wrapf(err, "Unable to get base object size")
 		log.Error(err)
 		return err
 	}
 
+	magicString := make([]byte, 32)
+	//copy(magicString[0:7], []byte("coreiso+"))
+	//binary.LittleEndian.PutUint64(magicString[8:15], uint64(baseObjectSize))
+	//binary.LittleEndian.PutUint64(magicString[16:23], uint64(ignitionObjectSize))
+	if err = c.Upload(ctx, magicString, magicObjectName); err != nil {
+		err = errors.Wrapf(err, "Failed to upload ignition object %s", ignitionObjectName)
+		log.Error(err)
+		return err
+	}
+
 	multiOut, err := c.client.CreateMultipartUpload(&s3.CreateMultipartUploadInput{Bucket: aws.String(c.cfg.S3Bucket), Key: aws.String(objectName)})
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to start upload for file %s", filePath)
+		err = errors.Wrapf(err, "Unable to start upload for %s", objectName)
 		log.Error(err)
 		return err
 	}
 	uploadID := multiOut.UploadId
-	firstChunkBytes := int64(5 * 1024 * 1024)
+	firstChunkBytes := int64(32768 - 24)
 	var completedParts []*s3.CompletedPart
-
 	partNum := int64(1)
-	completedPart, err := c.client.UploadPart(&s3.UploadPartInput{
-		Bucket:        aws.String(c.cfg.S3Bucket),
-		Key:           aws.String(objectName),
-		Body:          file,
-		ContentLength: &firstChunkBytes,
-		PartNumber:    &partNum,
-		UploadId:      uploadID,
-	})
-	if err != nil {
-		err = errors.Wrapf(err, "Failed to upload first part for file %s", filePath)
-		log.Error(err)
-		return err
-	}
-	completedParts = append(completedParts, &s3.CompletedPart{ETag: completedPart.ETag, PartNumber: aws.Int64(partNum)})
 
-	partNum = int64(2)
-	completedPartCopy, err := c.client.UploadPartCopy(&s3.UploadPartCopyInput{
-		Bucket:          aws.String(c.cfg.S3Bucket),
-		Key:             aws.String(objectName),
-		CopySource:      aws.String(fmt.Sprintf("/%s/%s", c.cfg.S3Bucket, baseObjectKey)),
-		CopySourceRange: aws.String(fmt.Sprintf("bytes=%d-%d", firstChunkBytes+1, objectSize-1)),
-		PartNumber:      &partNum,
-	})
+	// First part from base ISO
+	etag, err := c.uploadPartCopy(log, partNum, uploadID, baseObjectName, objectName, 0, firstChunkBytes-1)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to copy bulk part for file %s", filePath)
-		log.Error(err)
 		return err
 	}
-	completedParts = append(completedParts, &s3.CompletedPart{ETag: completedPartCopy.CopyPartResult.ETag, PartNumber: aws.Int64(partNum)})
+	completedParts = append(completedParts, &s3.CompletedPart{ETag: etag, PartNumber: aws.Int64(partNum)})
+	partNum++
 
-	_, err = file.Seek(objectSize, 0)
+	// Second part is the magic string, 24 bytes long
+	etag, err = c.uploadPartCopy(log, partNum, uploadID, magicObjectName, objectName, 0, 23)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to seek towards end of file %s", filePath)
-		log.Error(err)
 		return err
 	}
+	completedParts = append(completedParts, &s3.CompletedPart{ETag: etag, PartNumber: aws.Int64(partNum)})
+	partNum++
 
-	remainder := fileInfo.Size() - objectSize
-	partNum = int64(3)
-	completedPart, err = c.client.UploadPart(&s3.UploadPartInput{
-		Bucket:        aws.String(c.cfg.S3Bucket),
-		Key:           aws.String(objectName),
-		Body:          file,
-		ContentLength: &remainder,
-		PartNumber:    &partNum,
-		UploadId:      uploadID,
-	})
+	// Third part is the bulk of the base ISO
+	etag, err = c.uploadPartCopy(log, partNum, uploadID, baseObjectName, objectName, 32768, baseObjectSize-1)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to upload last part for file %s", filePath)
-		log.Error(err)
 		return err
 	}
-	completedParts = append(completedParts, &s3.CompletedPart{ETag: completedPart.ETag, PartNumber: aws.Int64(partNum)})
+	completedParts = append(completedParts, &s3.CompletedPart{ETag: etag, PartNumber: aws.Int64(partNum)})
+	partNum++
+
+	// Fourth part is the gzipped ignition
+	etag, err = c.uploadPartCopy(log, partNum, uploadID, ignitionObjectName, objectName, 0, ignitionObjectSize-1)
+	if err != nil {
+		return err
+	}
+	completedParts = append(completedParts, &s3.CompletedPart{ETag: etag, PartNumber: aws.Int64(partNum)})
 
 	_, err = c.client.CompleteMultipartUpload(&s3.CompleteMultipartUploadInput{
 		Bucket:   aws.String(c.cfg.S3Bucket),
@@ -264,11 +263,28 @@ func (c *S3Client) UploadISO(ctx context.Context, filePath, objectName string) e
 		},
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to complete upload for file %s", filePath)
+		err = errors.Wrapf(err, "Failed to complete upload for %s", objectName)
 		log.Error(err)
 		return err
 	}
 	return nil
+}
+
+func (c *S3Client) uploadPartCopy(log logrus.FieldLogger, partNum int64, uploadID *string, sourceObjectKey string, destObjectKey string, sourceStartBytes int64, sourceEndBytes int64) (*string, error) {
+	completedPartCopy, err := c.client.UploadPartCopy(&s3.UploadPartCopyInput{
+		Bucket:          aws.String(c.cfg.S3Bucket),
+		Key:             aws.String(destObjectKey),
+		CopySource:      aws.String(fmt.Sprintf("/%s/%s", c.cfg.S3Bucket, sourceObjectKey)),
+		CopySourceRange: aws.String(fmt.Sprintf("bytes=%d-%d", sourceStartBytes, sourceEndBytes)),
+		PartNumber:      &partNum,
+		UploadId:        uploadID,
+	})
+	if err != nil {
+		err = errors.Wrapf(err, "Failed to copy part %d for file %s", partNum, destObjectKey)
+		log.Error(err)
+		return nil, err
+	}
+	return completedPartCopy.CopyPartResult.ETag, nil
 }
 
 func (c *S3Client) Upload(ctx context.Context, data []byte, objectName string) error {

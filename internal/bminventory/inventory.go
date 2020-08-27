@@ -520,15 +520,20 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(common.GenerateError(http.StatusInternalServerError, formatErr))
 	}
 
-	jobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, now.Format("20060102150405"))
-	imgName := getImageName(params.ClusterID)
+	//jobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, now.Format("20060102150405"))
+	//imgName := getImageName(params.ClusterID)
 
-	if err := b.generator.GenerateISO(ctx, cluster, jobName, imgName, ignitionConfig, b.eventsHandler); err != nil {
-		log.WithError(err).Errorf("GenerateISO failed for cluster %s", cluster.ID)
-		msg := "Failed to generate image: error in generator.GenerateISO"
-		b.eventsHandler.AddEvent(ctx, params.ClusterID, nil, models.EventSeverityError, msg, time.Now())
+	if err := b.objectHandler.UploadISO(ctx, ignitionConfig, fmt.Sprintf("discovery-image-%s", cluster.ID.String())); err != nil {
+		log.WithError(err).Errorf("Upload ISO failed for cluster %s", cluster.ID)
+		b.eventsHandler.AddEvent(ctx, params.ClusterID, nil, models.EventSeverityError, "Failed to upload image", time.Now())
 		return installer.NewGenerateClusterISOInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
+	//if err := b.generator.GenerateISO(ctx, cluster, jobName, imgName, ignitionConfig, b.eventsHandler); err != nil {
+	//	log.WithError(err).Errorf("GenerateISO failed for cluster %s", cluster.ID)
+	//	msg := "Failed to generate image: error in generator.GenerateISO"
+	//	b.eventsHandler.AddEvent(ctx, params.ClusterID, nil, models.EventSeverityError, msg, time.Now())
+	//	return installer.NewGenerateClusterISOInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	//}
 
 	if err := b.updateImageInfoPostUpload(ctx, &cluster, clusterProxyHash); err != nil {
 		return installer.NewGenerateClusterISOInternalServerError().

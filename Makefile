@@ -80,7 +80,7 @@ generate-keys: $(BUILD_FOLDER)
 ##################
 
 .PHONY: build
-build: lint unit-test build-minimal build-iso-generator
+build: lint build-minimal build-iso-generator
 
 build-minimal: $(BUILD_FOLDER)
 	CGO_ENABLED=0 go build -o $(BUILD_FOLDER)/assisted-service cmd/main.go
