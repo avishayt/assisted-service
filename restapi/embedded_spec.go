@@ -783,19 +783,18 @@ func init() {
           },
           {
             "enum": [
-              "bootstrap.ign",
-              "master.ign",
-              "metadata.json",
-              "worker.ign",
-              "kubeadmin-password",
-              "kubeconfig",
-              "kubeconfig-noingress",
-              "install-config.yaml"
+              "installation",
+              "logs"
             ],
             "type": "string",
-            "name": "file_name",
+            "name": "category",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "file_name",
+            "in": "query"
           }
         ],
         "responses": {
@@ -4300,19 +4299,18 @@ func init() {
           },
           {
             "enum": [
-              "bootstrap.ign",
-              "master.ign",
-              "metadata.json",
-              "worker.ign",
-              "kubeadmin-password",
-              "kubeconfig",
-              "kubeconfig-noingress",
-              "install-config.yaml"
+              "installation",
+              "logs"
             ],
             "type": "string",
-            "name": "file_name",
+            "name": "category",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "file_name",
+            "in": "query"
           }
         ],
         "responses": {

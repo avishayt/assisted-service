@@ -18,7 +18,8 @@ import (
 type GetPresignedForClusterFilesURL struct {
 	ClusterID strfmt.UUID
 
-	FileName string
+	Category string
+	FileName *string
 
 	_basePath string
 	// avoid unkeyed usage
@@ -61,7 +62,15 @@ func (o *GetPresignedForClusterFilesURL) Build() (*url.URL, error) {
 
 	qs := make(url.Values)
 
-	fileNameQ := o.FileName
+	categoryQ := o.Category
+	if categoryQ != "" {
+		qs.Set("category", categoryQ)
+	}
+
+	var fileNameQ string
+	if o.FileName != nil {
+		fileNameQ = *o.FileName
+	}
 	if fileNameQ != "" {
 		qs.Set("file_name", fileNameQ)
 	}

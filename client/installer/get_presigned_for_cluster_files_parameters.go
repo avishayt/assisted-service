@@ -60,10 +60,12 @@ for the get presigned for cluster files operation typically these are written to
 */
 type GetPresignedForClusterFilesParams struct {
 
+	/*Category*/
+	Category string
 	/*ClusterID*/
 	ClusterID strfmt.UUID
 	/*FileName*/
-	FileName string
+	FileName *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -103,6 +105,17 @@ func (o *GetPresignedForClusterFilesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCategory adds the category to the get presigned for cluster files params
+func (o *GetPresignedForClusterFilesParams) WithCategory(category string) *GetPresignedForClusterFilesParams {
+	o.SetCategory(category)
+	return o
+}
+
+// SetCategory adds the category to the get presigned for cluster files params
+func (o *GetPresignedForClusterFilesParams) SetCategory(category string) {
+	o.Category = category
+}
+
 // WithClusterID adds the clusterID to the get presigned for cluster files params
 func (o *GetPresignedForClusterFilesParams) WithClusterID(clusterID strfmt.UUID) *GetPresignedForClusterFilesParams {
 	o.SetClusterID(clusterID)
@@ -115,13 +128,13 @@ func (o *GetPresignedForClusterFilesParams) SetClusterID(clusterID strfmt.UUID) 
 }
 
 // WithFileName adds the fileName to the get presigned for cluster files params
-func (o *GetPresignedForClusterFilesParams) WithFileName(fileName string) *GetPresignedForClusterFilesParams {
+func (o *GetPresignedForClusterFilesParams) WithFileName(fileName *string) *GetPresignedForClusterFilesParams {
 	o.SetFileName(fileName)
 	return o
 }
 
 // SetFileName adds the fileName to the get presigned for cluster files params
-func (o *GetPresignedForClusterFilesParams) SetFileName(fileName string) {
+func (o *GetPresignedForClusterFilesParams) SetFileName(fileName *string) {
 	o.FileName = fileName
 }
 
@@ -133,18 +146,34 @@ func (o *GetPresignedForClusterFilesParams) WriteToRequest(r runtime.ClientReque
 	}
 	var res []error
 
+	// query param category
+	qrCategory := o.Category
+	qCategory := qrCategory
+	if qCategory != "" {
+		if err := r.SetQueryParam("category", qCategory); err != nil {
+			return err
+		}
+	}
+
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID.String()); err != nil {
 		return err
 	}
 
-	// query param file_name
-	qrFileName := o.FileName
-	qFileName := qrFileName
-	if qFileName != "" {
-		if err := r.SetQueryParam("file_name", qFileName); err != nil {
-			return err
+	if o.FileName != nil {
+
+		// query param file_name
+		var qrFileName string
+		if o.FileName != nil {
+			qrFileName = *o.FileName
 		}
+		qFileName := qrFileName
+		if qFileName != "" {
+			if err := r.SetQueryParam("file_name", qFileName); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if len(res) > 0 {

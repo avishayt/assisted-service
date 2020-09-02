@@ -33,14 +33,18 @@ type GetPresignedForClusterFilesParams struct {
 
 	/*
 	  Required: true
+	  In: query
+	*/
+	Category string
+	/*
+	  Required: true
 	  In: path
 	*/
 	ClusterID strfmt.UUID
 	/*
-	  Required: true
 	  In: query
 	*/
-	FileName string
+	FileName *string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -53,6 +57,11 @@ func (o *GetPresignedForClusterFilesParams) BindRequest(r *http.Request, route *
 	o.HTTPRequest = r
 
 	qs := runtime.Values(r.URL.Query())
+
+	qCategory, qhkCategory, _ := qs.GetOK("category")
+	if err := o.bindCategory(qCategory, qhkCategory, route.Formats); err != nil {
+		res = append(res, err)
+	}
 
 	rClusterID, rhkClusterID, _ := route.Params.GetOK("cluster_id")
 	if err := o.bindClusterID(rClusterID, rhkClusterID, route.Formats); err != nil {
@@ -67,6 +76,41 @@ func (o *GetPresignedForClusterFilesParams) BindRequest(r *http.Request, route *
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// bindCategory binds and validates parameter Category from query.
+func (o *GetPresignedForClusterFilesParams) bindCategory(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("category", "query", rawData)
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+	// AllowEmptyValue: false
+	if err := validate.RequiredString("category", "query", raw); err != nil {
+		return err
+	}
+
+	o.Category = raw
+
+	if err := o.validateCategory(formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateCategory carries on validations for parameter Category
+func (o *GetPresignedForClusterFilesParams) validateCategory(formats strfmt.Registry) error {
+
+	if err := validate.EnumCase("category", "query", o.Category, []interface{}{"installation", "logs"}, true); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -105,35 +149,18 @@ func (o *GetPresignedForClusterFilesParams) validateClusterID(formats strfmt.Reg
 
 // bindFileName binds and validates parameter FileName from query.
 func (o *GetPresignedForClusterFilesParams) bindFileName(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("file_name", "query", rawData)
-	}
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
 	}
 
-	// Required: true
+	// Required: false
 	// AllowEmptyValue: false
-	if err := validate.RequiredString("file_name", "query", raw); err != nil {
-		return err
+	if raw == "" { // empty values pass all other validations
+		return nil
 	}
 
-	o.FileName = raw
-
-	if err := o.validateFileName(formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateFileName carries on validations for parameter FileName
-func (o *GetPresignedForClusterFilesParams) validateFileName(formats strfmt.Registry) error {
-
-	if err := validate.EnumCase("file_name", "query", o.FileName, []interface{}{"bootstrap.ign", "master.ign", "metadata.json", "worker.ign", "kubeadmin-password", "kubeconfig", "kubeconfig-noingress", "install-config.yaml"}, true); err != nil {
-		return err
-	}
+	o.FileName = &raw
 
 	return nil
 }
