@@ -1580,11 +1580,30 @@ func (b *bareMetalInventory) GetPresignedForClusterFiles(ctx context.Context, pa
 	if !b.objectHandler.IsAwsS3() {
 		return common.NewApiError(http.StatusBadRequest, errors.New("Failed to generate presigned URL: invalid backend"))
 	}
-	fullFileName := fmt.Sprintf("%s/%s", params.ClusterID, params.FileName)
 
-	if strings.HasPrefix(params.FileName, "logs/") {
-		// there will always be at least 2 variables after splitting because of "logs/" prefix
-		hostId := strings.Split(params.FileName, "/")[1]
+	var fullFileName string
+	if params.Category == "installation" {
+		if params.FileName == nil {
+			err := fmt.Errorf("must pass file name")
+			log.WithError(err).Errorf("failed generate presigned URL for installation file")
+			return common.NewApiError(http.StatusBadRequest, err)
+		}
+		if !funk.Contains(clusterFileNames, *params.FileName) {
+			err := fmt.Errorf("invalid cluster file %s", *params.FileName)
+			log.WithError(err).Errorf("failed generate presigned URL for file: %s from cluster: %s", *params.FileName, params.ClusterID)
+			return common.NewApiError(http.StatusBadRequest, err)
+		}
+		if err := b.checkFileForDownload(ctx, params.ClusterID.String(), *params.FileName); err != nil {
+			return common.GenerateErrorResponder(err)
+		}
+		fullFileName = fmt.Sprintf("%s/%s", params.ClusterID, *params.FileName)
+	} else if params.Category == "logs" {
+		if params.FileName == nil {
+			err := fmt.Errorf("must pass file name")
+			log.WithError(err).Errorf("failed generate presigned URL for log file")
+			return common.NewApiError(http.StatusBadRequest, err)
+		}
+		hostId := *params.FileName
 		if !strfmt.IsUUID(hostId) {
 			return common.NewApiError(http.StatusBadRequest, errors.Errorf("Host id is not valid"))
 		}
@@ -1593,14 +1612,16 @@ func (b *bareMetalInventory) GetPresignedForClusterFiles(ctx context.Context, pa
 			return common.GenerateErrorResponder(err)
 		}
 		fullFileName = b.getLogsFullName(params.ClusterID.String(), host.ID.String())
-	} else if err := b.checkFileForDownload(ctx, params.ClusterID.String(), params.FileName); err != nil {
-		return common.GenerateErrorResponder(err)
+	} else {
+		err := fmt.Errorf("invalid category")
+		log.WithError(err).Errorf("failed generate presigned URL due to invalid category %s", params.Category)
+		return common.NewApiError(http.StatusBadRequest, err)
 	}
 
 	duration, _ := time.ParseDuration("10m")
 	url, err := b.objectHandler.GeneratePresignedDownloadURL(ctx, fullFileName, duration)
 	if err != nil {
-		log.WithError(err).Errorf("failed to generate presigned URL: %s from cluster: %s", params.FileName, params.ClusterID.String())
+		log.WithError(err).Errorf("failed to generate presigned URL: %s from cluster: %s", *params.FileName, params.ClusterID.String())
 		return common.NewApiError(http.StatusInternalServerError, err)
 	}
 	return installer.NewGetPresignedForClusterFilesOK().WithPayload(&models.Presigned{URL: &url})

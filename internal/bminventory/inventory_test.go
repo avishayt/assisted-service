@@ -1975,24 +1975,29 @@ var _ = Describe("KubeConfig download", func() {
 	})
 
 	It("kubeconfig presigned backend not aws", func() {
+		file := kubeconfig
 		mockS3Client.EXPECT().IsAwsS3().Return(false)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  kubeconfig,
+			Category:  "installation",
+			FileName:  &file,
 		})
 		Expect(generateReply).To(BeAssignableToTypeOf(&common.ApiErrorResponse{}))
 		Expect(generateReply.(*common.ApiErrorResponse).StatusCode()).To(Equal(int32(http.StatusBadRequest)))
 	})
 	It("kubeconfig presigned cluster is not in installed state", func() {
+		file := kubeconfig
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  kubeconfig,
+			Category:  "installation",
+			FileName:  &file,
 		})
 		Expect(generateReply).To(BeAssignableToTypeOf(&common.ApiErrorResponse{}))
 		Expect(generateReply.(*common.ApiErrorResponse).StatusCode()).To(Equal(int32(http.StatusConflict)))
 	})
 	It("kubeconfig presigned happy flow", func() {
+		file := kubeconfig
 		status := ClusterStatusInstalled
 		c.Status = &status
 		db.Save(&c)
@@ -2001,7 +2006,8 @@ var _ = Describe("KubeConfig download", func() {
 		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, gomock.Any()).Return("url", nil)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  kubeconfig,
+			Category:  "installation",
+			FileName:  &file,
 		})
 		Expect(generateReply).Should(BeAssignableToTypeOf(&installer.GetPresignedForClusterFilesOK{}))
 		replyPayload := generateReply.(*installer.GetPresignedForClusterFilesOK).Payload
@@ -2395,29 +2401,33 @@ var _ = Describe("Upload and Download logs test", func() {
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  "logs/",
+			Category:  "logs",
 		})
 		verifyApiError(generateReply, http.StatusBadRequest)
 	})
+	file := "aaaaaaaa"
 	It("Logs presigned bad host id", func() {
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  "logs/aaaaaaaa",
+			Category:  "logs",
+			FileName:  &file,
 		})
 		verifyApiError(generateReply, http.StatusBadRequest)
 	})
 	It("Logs presigned host not found", func() {
-		hostID := strfmt.UUID(uuid.New().String())
+		file := uuid.New().String()
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  fmt.Sprintf("logs/%s", hostID),
+			Category:  "logs",
+			FileName:  &file,
 		})
 		verifyApiError(generateReply, http.StatusNotFound)
 	})
 	It("Logs presigned no logs found", func() {
-		hostID := strfmt.UUID(uuid.New().String())
+		file := uuid.New().String()
+		hostID := strfmt.UUID(file)
 		_ = addHost(hostID, models.HostRoleMaster, "known", clusterID, "{}", db)
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		fileName := bm.getLogsFullName(clusterID.String(), hostID.String())
@@ -2425,19 +2435,22 @@ var _ = Describe("Upload and Download logs test", func() {
 			errors.Errorf("Dummy"))
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  fmt.Sprintf("logs/%s", hostID),
+			Category:  "logs",
+			FileName:  &file,
 		})
 		verifyApiError(generateReply, http.StatusInternalServerError)
 	})
 	It("logs presigned happy flow", func() {
-		hostID := strfmt.UUID(uuid.New().String())
+		file := uuid.New().String()
+		hostID := strfmt.UUID(file)
 		_ = addHost(hostID, models.HostRoleMaster, "known", clusterID, "{}", db)
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		fileName := bm.getLogsFullName(clusterID.String(), hostID.String())
 		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, gomock.Any()).Return("url", nil)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
-			FileName:  fmt.Sprintf("logs/%s", hostID),
+			Category:  "logs",
+			FileName:  &file,
 		})
 		Expect(generateReply).Should(BeAssignableToTypeOf(&installer.GetPresignedForClusterFilesOK{}))
 		replyPayload := generateReply.(*installer.GetPresignedForClusterFilesOK).Payload
