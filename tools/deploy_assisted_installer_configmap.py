@@ -68,6 +68,7 @@ def main():
                     image_fqdn = deployment_options.get_image_override(deploy_options, image_short_name, env_var_name)
                 versions[env_var_name] = image_fqdn
 
+            versions["IMAGE_BUILDER"] = "quay.io/avishayred/assisted-iso-create:foo"
             # Edge case for controller image override
             if os.environ.get("INSTALLER_IMAGE") and not os.environ.get("CONTROLLER_IMAGE"):
                 versions["CONTROLLER_IMAGE"] = deployment_options.IMAGE_FQDN_TEMPLATE.format("assisted-installer-controller",

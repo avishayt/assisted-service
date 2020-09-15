@@ -20,9 +20,9 @@ kubectl get service $(1) -n $(NAMESPACE) | grep $(1) | awk '{print $$4 ":" $$5}'
 endef # get_service
 endif # TARGET
 
-SERVICE := $(or ${SERVICE},quay.io/ocpmetal/assisted-service:latest)
+SERVICE := $(or ${SERVICE},quay.io/avishayred/assisted-service:foo)
 SERVICE_ONPREM := $(or ${SERVICE_ONPREM},quay.io/ocpmetal/assisted-service-onprem:latest)
-ISO_CREATION := $(or ${ISO_CREATION},quay.io/ocpmetal/assisted-iso-create:latest)
+ISO_CREATION := $(or ${ISO_CREATION},quay.io/avishayred/assisted-iso-create:foo)
 DUMMY_IGNITION := $(or ${DUMMY_IGNITION},minikube-local-registry/ignition-dummy-generator:minikube-test)
 GIT_REVISION := $(shell git rev-parse HEAD)
 APPLY_NAMESPACE := $(or ${APPLY_NAMESPACE},True)
