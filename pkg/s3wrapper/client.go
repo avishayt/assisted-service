@@ -34,6 +34,7 @@ import (
 
 const awsEndpointSuffix = ".amazonaws.com"
 const baseObjectName = "livecd.iso"
+const fiveMB = 5 * 1024 * 1024
 
 //go:generate mockgen -source=client.go -package=s3wrapper -destination=mock_s3wrapper.go
 //go:generate mockgen -package s3wrapper -destination mock_s3iface.go github.com/aws/aws-sdk-go/service/s3/s3iface S3API
@@ -196,33 +197,40 @@ func (c *S3Client) UploadISO(ctx context.Context, ignitionConfig, objectPrefix s
 	uploadID := multiOut.UploadId
 	var completedParts []*s3.CompletedPart
 
-	// Copy the bulk of the live ISO, until the ignition area
+	// First part: copy the first part of the live ISO, until the embedded area
 	completedPart, err := c.uploadPartCopy(log, aws.Int64(1), uploadID, baseObjectName, objectName, 0, areaOffsetBytes-1)
 	if err != nil {
 		return err
 	}
 	completedParts = append(completedParts, completedPart)
 
-	// Download the range of the live ISO starting from the ignition area
+	// Second part: The embedded area containing the compressed ignition config. The S3 part must be at least 5MB,
+	// so we download 5MB from the live ISO, add the ignition, and upload it.
 	getRest, err := c.client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(c.cfg.S3Bucket),
 		Key:    aws.String(baseObjectName),
-		Range:  aws.String(fmt.Sprintf("bytes=%d-%d", areaOffsetBytes, baseObjectSize)),
+		Range:  aws.String(fmt.Sprintf("bytes=%d-%d", areaOffsetBytes, areaOffsetBytes+fiveMB-1)),
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to fetch end of live ISO %s", objectName)
+		err = errors.Wrapf(err, "Failed to fetch embedded area of live ISO %s", objectName)
 		log.Error(err)
 		return err
 	}
 	origContents, err := ioutil.ReadAll(getRest.Body)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to fetch body from end of live ISO %s", objectName)
+		err = errors.Wrapf(err, "Failed to fetch body from embedded area of live ISO %s", objectName)
 		log.Error(err)
 		return err
 	}
 
-	// Compress the ignition config, pad it with zeroes, and upload it
 	completedPart, err = c.uploadIgnition(log, aws.Int64(2), uploadID, objectName, ignitionConfig, origContents, areaLengthBytes)
+	if err != nil {
+		return err
+	}
+	completedParts = append(completedParts, completedPart)
+
+	// Third part: copy the last part of the live ISO, after the embedded area
+	completedPart, err = c.uploadPartCopy(log, aws.Int64(3), uploadID, baseObjectName, objectName, areaOffsetBytes+fiveMB, baseObjectSize-1)
 	if err != nil {
 		return err
 	}
@@ -263,13 +271,16 @@ func (c *S3Client) getISOHeaderInfo(log logrus.FieldLogger, baseObjectName strin
 
 	res := bytes.Compare(headerString[0:8], []byte("coreiso+"))
 	if res != 0 {
-		err := errors.New("Could not find magic string in object header")
-		log.WithError(err).Errorf("Failed to read header of object %s from bucket %s", baseObjectName, c.cfg.S3Bucket)
-		return 0, 0, err
+		return 0, 0, errors.New("Could not find magic string in object header")
 	}
 
 	offset := int64(binary.LittleEndian.Uint64(headerString[8:16]))
 	length := int64(binary.LittleEndian.Uint64(headerString[16:24]))
+
+	// For now we assume that the embedded area is less than 5MB, which is the minimum S3 part size
+	if length > int64(fiveMB) {
+		return 0, 0, errors.New("ISO embedded area larger than what is currently supported")
+	}
 	return offset, length, nil
 }
 
