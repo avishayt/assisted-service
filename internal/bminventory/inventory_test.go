@@ -10,12 +10,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"testing"
 	"time"
-
-	"github.com/openshift/assisted-service/internal/hostutil"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
@@ -179,7 +176,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			mockS3Client.EXPECT().IsAwsS3().Return(true)
 			mockS3Client.EXPECT().UpdateObjectTimestamp(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			mockS3Client.EXPECT().GetObjectSizeBytes(gomock.Any(), gomock.Any()).Return(int64(100), nil).Times(1)
-			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
+			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
 			mockEvents.EXPECT().AddEvent(gomock.Any(), clusterId, nil, models.EventSeverityInfo, "Re-used existing image rather than generating a new one", gomock.Any())
 			generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
 				ClusterID:         clusterId,
@@ -204,7 +201,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			mockS3Client.EXPECT().UploadISO(gomock.Any(), gomock.Any(), gomock.Any())
 			mockS3Client.EXPECT().UpdateObjectTimestamp(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 			mockS3Client.EXPECT().GetObjectSizeBytes(gomock.Any(), gomock.Any()).Return(int64(100), nil).Times(1)
-			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
+			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
 			mockEvents.EXPECT().AddEvent(gomock.Any(), clusterId, nil, models.EventSeverityInfo, "Generated image (proxy URL is \"\", SSH public key is not set)", gomock.Any())
 			generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
 				ClusterID:         clusterId,
@@ -220,7 +217,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			mockS3Client.EXPECT().IsAwsS3().Return(true)
 			mockS3Client.EXPECT().UploadISO(gomock.Any(), gomock.Any(), gomock.Any())
 			mockS3Client.EXPECT().GetObjectSizeBytes(gomock.Any(), gomock.Any()).Return(int64(100), nil).Times(1)
-			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
+			mockS3Client.EXPECT().GeneratePresignedDownloadURL(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).Times(1)
 			mockEvents.EXPECT().AddEvent(gomock.Any(), *clusterId, nil, models.EventSeverityInfo, "Generated image (proxy URL is \"\", SSH public key is not set)", gomock.Any())
 			generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
 				ClusterID:         *clusterId,
@@ -2217,7 +2214,7 @@ var _ = Describe("KubeConfig download", func() {
 		db.Save(&c)
 		fileName := fmt.Sprintf("%s/%s", clusterID, kubeconfig)
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
-		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, gomock.Any()).Return("url", nil)
+		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, kubeconfig, gomock.Any()).Return("url", nil)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
 			FileName:  kubeconfig,
@@ -2485,6 +2482,7 @@ var _ = Describe("Upload and Download logs test", func() {
 		bm = NewBareMetalInventory(db, getTestLog(), mockHostApi, mockClusterAPI, cfg, mockJob, nil, mockS3Client, nil, getTestAuthHandler())
 		c = common.Cluster{Cluster: models.Cluster{
 			ID:     &clusterID,
+			Name:   "mycluster",
 			APIVip: "10.11.12.13",
 		}}
 		err := db.Create(&c).Error
@@ -2584,7 +2582,7 @@ var _ = Describe("Upload and Download logs test", func() {
 		r := ioutil.NopCloser(bytes.NewReader([]byte("test")))
 		mockS3Client.EXPECT().Download(ctx, fileName).Return(r, int64(4), nil)
 		generateReply := bm.DownloadClusterLogs(ctx, params)
-		downloadFileName := fmt.Sprintf("%s_%s.tar.gz", clusterID, logsType)
+		downloadFileName := fmt.Sprintf("mycluster_%s_%s.tar.gz", clusterID, logsType)
 		Expect(generateReply).Should(Equal(filemiddleware.NewResponder(installer.NewDownloadClusterLogsOK().WithPayload(r), downloadFileName, 4)))
 	})
 	It("Download S3 logs where not uploaded yet", func() {
@@ -2625,13 +2623,14 @@ var _ = Describe("Upload and Download logs test", func() {
 			ClusterID: clusterID,
 			HostID:    *host.ID,
 		}
+		host.Bootstrap = true
 		fileName := bm.getLogsFullName(clusterID.String(), host.ID.String())
 		host.LogsCollectedAt = strfmt.DateTime(time.Now())
 		db.Save(&host)
 		r := ioutil.NopCloser(bytes.NewReader([]byte("test")))
 		mockS3Client.EXPECT().Download(ctx, fileName).Return(r, int64(4), nil)
 		generateReply := bm.DownloadHostLogs(ctx, params)
-		downloadFileName := fmt.Sprintf("%s_%s", hostutil.GetHostnameForMsg(&host), filepath.Base(fileName))
+		downloadFileName := fmt.Sprintf("mycluster_bootstrap_%s.tar.gz", newHostID.String())
 		Expect(generateReply).Should(Equal(filemiddleware.NewResponder(installer.NewDownloadHostLogsOK().WithPayload(r), downloadFileName, 4)))
 	})
 	It("Logs presigned host not found", func() {
@@ -2664,7 +2663,7 @@ var _ = Describe("Upload and Download logs test", func() {
 		fileName := bm.getLogsFullName(clusterID.String(), hostID.String())
 		host1.LogsCollectedAt = strfmt.DateTime(time.Now())
 		db.Save(&host1)
-		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, gomock.Any()).Return("",
+		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, fmt.Sprintf("mycluster_master_%s.tar.gz", hostID.String()), gomock.Any()).Return("",
 			errors.Errorf("Dummy"))
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
@@ -2681,7 +2680,7 @@ var _ = Describe("Upload and Download logs test", func() {
 		fileName := bm.getLogsFullName(clusterID.String(), hostID.String())
 		host1.LogsCollectedAt = strfmt.DateTime(time.Now())
 		db.Save(&host1)
-		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, gomock.Any()).Return("url", nil)
+		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, fileName, fmt.Sprintf("mycluster_master_%s.tar.gz", hostID.String()), gomock.Any()).Return("url", nil)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
 			FileName:  "logs",
@@ -2728,7 +2727,7 @@ var _ = Describe("Upload and Download logs test", func() {
 		mockS3Client.EXPECT().Download(ctx, fileName).Return(r, int64(4), nil)
 		generateReply := bm.DownloadClusterLogs(ctx, params)
 		Expect(generateReply).Should(Equal(filemiddleware.NewResponder(installer.NewDownloadClusterLogsOK().WithPayload(r),
-			fmt.Sprintf("%s_%s", clusterID, filepath.Base(fileName)), 4)))
+			fmt.Sprintf("mycluster_%s.tar", clusterID), 4)))
 	})
 
 	It("Logs presigned cluster logs failed", func() {
@@ -2744,7 +2743,7 @@ var _ = Describe("Upload and Download logs test", func() {
 	It("Logs presigned cluster logs happy flow", func() {
 		mockS3Client.EXPECT().IsAwsS3().Return(true)
 		mockClusterAPI.EXPECT().CreateTarredClusterLogs(ctx, gomock.Any(), gomock.Any()).Return("tarred", nil)
-		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, "tarred", gomock.Any()).Return("url", nil)
+		mockS3Client.EXPECT().GeneratePresignedDownloadURL(ctx, "tarred", fmt.Sprintf("mycluster_%s.tar", clusterID.String()), gomock.Any()).Return("url", nil)
 		generateReply := bm.GetPresignedForClusterFiles(ctx, installer.GetPresignedForClusterFilesParams{
 			ClusterID: clusterID,
 			FileName:  "logs",
