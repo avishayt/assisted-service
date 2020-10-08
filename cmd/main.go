@@ -77,6 +77,8 @@ var Options struct {
 	HostConfig                  host.Config
 	LogConfig                   logconfig.Config
 	LeaderConfig                leader.Config
+	BaseImageWaitTimeout        time.Duration `envconfig:"BASE_IMAGE_WAIT_TIMEOUT" default:"10m"`
+	BaseImageWaitDuration       time.Duration `envconfig:"BASE_IMAGE_WAIT_DURATION" default:"15s"`
 }
 
 func InitLogs() *logrus.Entry {
@@ -298,9 +300,18 @@ func main() {
 	if Options.DeployTarget == deploymet_type_k8s {
 		go func() {
 			defer apiEnabler.Enable()
-			// Upload the live image which will serve as a basis for user-generated images.
-			if err = generator.UploadBaseISO(); err != nil {
-				log.Fatal("Failed to upload base image", err)
+			if lead.IsLeader() {
+				// Upload the live image which will serve as a basis for user-generated images.
+				log.Infof("Start uploading base ISO")
+				if err = generator.UploadBaseISO(); err != nil {
+					log.Fatal("Failed to upload base image", err)
+				}
+			} else {
+				log.Infof("Start waiting for base ISO")
+				if err = objectHandler.WaitForBaseISO(context.Background(), Options.BaseImageWaitDuration,
+					Options.BaseImageWaitTimeout); err != nil {
+					log.Fatal("Failed waiting for upload base image", err)
+				}
 			}
 		}()
 	} else {

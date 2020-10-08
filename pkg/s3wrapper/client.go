@@ -51,6 +51,7 @@ type API interface {
 	UpdateObjectTimestamp(ctx context.Context, objectName string) (bool, error)
 	ExpireObjects(ctx context.Context, prefix string, deleteTime time.Duration, callback func(ctx context.Context, log logrus.FieldLogger, objectName string))
 	ListObjectsByPrefix(ctx context.Context, prefix string) ([]string, error)
+	WaitForBaseISO(ctx context.Context, sleepDuration time.Duration, timeout time.Duration) error
 }
 
 var _ API = &S3Client{}
@@ -360,7 +361,7 @@ func (c *S3Client) handleObject(ctx context.Context, log logrus.FieldLogger, obj
 func (c *S3Client) ListObjectsByPrefix(ctx context.Context, prefix string) ([]string, error) {
 	log := logutil.FromContext(ctx, c.log)
 	var objects []string
-	log.Info("Listing objects by with prefix %s", prefix)
+	log.Debugf("Listing objects by with prefix %s", prefix)
 	resp, err := c.client.ListObjects(&s3.ListObjectsInput{
 		Bucket: aws.String(c.cfg.S3Bucket),
 		Prefix: aws.String(prefix),
@@ -374,4 +375,22 @@ func (c *S3Client) ListObjectsByPrefix(ctx context.Context, prefix string) ([]st
 		objects = append(objects, *key.Key)
 	}
 	return objects, nil
+}
+
+func (c *S3Client) WaitForBaseISO(ctx context.Context, sleepDuration time.Duration, timeout time.Duration) error {
+	startTime := time.Now()
+	for {
+		if time.Since(startTime) > timeout {
+			return errors.New(fmt.Sprintf("Object %s did not appear before timeout of %s", BaseObjectName, timeout))
+		}
+		exists, err := c.DoesObjectExist(ctx, BaseObjectName)
+		if err != nil {
+			return errors.Wrapf(err, "Unexpected error when looking for object %s", BaseObjectName)
+		}
+		if exists {
+			break
+		}
+		time.Sleep(sleepDuration)
+	}
+	return nil
 }

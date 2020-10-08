@@ -193,6 +193,7 @@ func (f *FSClient) GetObjectSizeBytes(ctx context.Context, objectName string) (i
 }
 
 func (f *FSClient) GeneratePresignedDownloadURL(ctx context.Context, objectName string, downloadFilename string, duration time.Duration) (string, error) {
+	// Not relevant for FS implementation
 	return "", nil
 }
 
@@ -272,4 +273,9 @@ func (f *FSClient) ListObjectsByPrefix(ctx context.Context, prefix string) ([]st
 		return nil, err
 	}
 	return matches, nil
+}
+
+func (f *FSClient) WaitForBaseISO(ctx context.Context, sleepDuration time.Duration, timeout time.Duration) error {
+	// Not relevant for FS implementation
+	return nil
 }
