@@ -145,7 +145,7 @@ func main() {
 	}
 
 	var lead leader.ElectorInterface
-	var autoMigrationLeader leader.ElectorInterface
+	var onetimeTaskLeader leader.ElectorInterface
 	authHandler := auth.NewAuthHandler(Options.Auth, ocmClient, log.WithField("pkg", "auth"))
 	authzHandler := auth.NewAuthzHandler(Options.Auth, ocmClient, log.WithField("pkg", "authz"))
 	versionHandler := versions.NewHandler(Options.Versions)
@@ -194,7 +194,7 @@ func main() {
 		}
 		k8sClient := kubernetes.NewForConfigOrDie(cfg)
 
-		autoMigrationLeader = leader.NewElector(k8sClient, leader.Config{LeaseDuration: 5 * time.Second,
+		onetimeTaskLeader = leader.NewElector(k8sClient, leader.Config{LeaseDuration: 5 * time.Second,
 			RetryInterval: 2 * time.Second, Namespace: Options.LeaderConfig.Namespace, RenewDeadline: 4 * time.Second},
 			"assisted-service-migration-helper",
 			log.WithField("pkg", "migrationLeader"))
@@ -209,7 +209,7 @@ func main() {
 
 	case "onprem":
 		lead = &leader.DummyElector{}
-		autoMigrationLeader = lead
+		onetimeTaskLeader = lead
 		// in on-prem mode, setup file system s3 driver and use localjob implementation
 		objectHandler = s3wrapper.NewFSClient("/data", log)
 		if objectHandler == nil {
@@ -221,7 +221,7 @@ func main() {
 		log.Fatalf("not supported deploy target %s", Options.DeployTarget)
 	}
 
-	err = autoMigrationWithLeader(autoMigrationLeader, db, log)
+	err = autoMigrationWithLeader(onetimeTaskLeader, db, log)
 	if err != nil {
 		log.WithError(err).Fatal("Failed auto migration process")
 	}
@@ -298,10 +298,11 @@ func main() {
 	if Options.DeployTarget == deploymet_type_k8s {
 		go func() {
 			defer apiEnabler.Enable()
-			// Upload the live image which will serve as a basis for user-generated images.
-			if err = generator.UploadBaseISO(); err != nil {
-				log.Fatal("Failed to upload base image", err)
+			err = uploadBaseISOWithLeader(onetimeTaskLeader, objectHandler, generator, log)
+			if err != nil {
+				log.WithError(err).Fatal("Failed uploading base ISO")
 			}
+
 		}()
 	} else {
 		apiEnabler.Enable()
@@ -352,6 +353,24 @@ func autoMigrationWithLeader(migrationLeader leader.ElectorInterface, db *gorm.D
 		log.Infof("Start automigration")
 		err := db.AutoMigrate(&models.Host{}, &common.Cluster{}, &events.Event{}).Error
 		log.Infof("Finish automigration")
+		return err
+	})
+}
+
+func uploadBaseISOWithLeader(uploadLeader leader.ElectorInterface, objectHandler s3wrapper.API, generator generator.ISOInstallConfigGenerator, log logrus.FieldLogger) error {
+	ctx := context.Background()
+	return uploadLeader.RunWithLeader(ctx, func() error {
+		exists, err := objectHandler.DoesObjectExist(ctx, s3wrapper.BaseObjectName)
+		if err != nil {
+			return err
+		}
+		if exists {
+			log.Info("Base ISO exists, skipping upload job")
+			return nil
+		}
+		log.Info("Starting base ISO upload")
+		err = generator.UploadBaseISO()
+		log.Info("Finished base ISO upload")
 		return err
 	})
 }

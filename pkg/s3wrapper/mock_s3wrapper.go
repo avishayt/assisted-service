@@ -6,12 +6,11 @@ package s3wrapper
 
 import (
 	context "context"
+	gomock "github.com/golang/mock/gomock"
+	logrus "github.com/sirupsen/logrus"
 	io "io"
 	reflect "reflect"
 	time "time"
-
-	gomock "github.com/golang/mock/gomock"
-	logrus "github.com/sirupsen/logrus"
 )
 
 // MockAPI is a mock of API interface
@@ -236,4 +235,18 @@ func (m *MockAPI) ListObjectsByPrefix(ctx context.Context, prefix string) ([]str
 func (mr *MockAPIMockRecorder) ListObjectsByPrefix(ctx, prefix interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectsByPrefix", reflect.TypeOf((*MockAPI)(nil).ListObjectsByPrefix), ctx, prefix)
+}
+
+// WaitForBaseISO mocks base method
+func (m *MockAPI) WaitForBaseISO(ctx context.Context, sleepDuration, timeout time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForBaseISO", ctx, sleepDuration, timeout)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WaitForBaseISO indicates an expected call of WaitForBaseISO
+func (mr *MockAPIMockRecorder) WaitForBaseISO(ctx, sleepDuration, timeout interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForBaseISO", reflect.TypeOf((*MockAPI)(nil).WaitForBaseISO), ctx, sleepDuration, timeout)
 }
