@@ -11,6 +11,7 @@
 1. skipper <https://github.com/stratoscale/skipper>
 1. minikube (for tests)
 1. kubectl
+1. Python modules `pip install waiting`
 
 ## First Setup
 
@@ -50,7 +51,8 @@ skipper make generate-from-swagger
 
 ### Pre-configuration
 
-- Run minikube on your system.
+- Run minikube on your system. **NOTE: You must enable the registry addon in
+    minikube with `minikube addons enable registry`.**
 - Deploy services `skipper make deploy-test`
 
 ### Run system tests

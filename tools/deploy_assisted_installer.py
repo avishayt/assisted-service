@@ -63,10 +63,10 @@ def main():
             service_container["volumeMounts"].append({'name': 'iso', 'mountPath': "/data"})
             spec["volumes"].append({'name': 'iso', 'emptyDir': {}})
             spec["initContainers"] = [{
-                "name": "assisted-iso-create",
-                "image": "quay.io/ocpmetal/assisted-iso-create:latest",
+                "name": "rhcos-download",
+                "image": "quay.io/app-sre/centos:8",
                 "command": ["bash", "-c"],
-                "args": ["cp -r /data/* /iso-data"],
+                "args": ["until curl https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.6/latest/rhcos-live.x86_64.iso --retry 5 -o /iso-data/livecd.iso; do sleep 1; done"],
                 "volumeMounts": [{"mountPath": "/iso-data", "name": "iso"}]
             }]
 

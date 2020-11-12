@@ -164,7 +164,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			})
 			Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOCreated()))
 			getReply := bm.GetCluster(ctx, installer.GetClusterParams{ClusterID: *clusterId}).(*installer.GetClusterOK)
-			Expect(getReply.Payload.ImageInfo.GeneratorVersion).To(Equal("quay.io/ocpmetal/assisted-iso-create:latest"))
+			Expect(getReply.Payload.ID).To(Equal(clusterId))
 		})
 
 		It("success with proxy", func() {
@@ -190,7 +190,7 @@ var _ = Describe("GenerateClusterISO", func() {
 				PullSecretSet: true,
 			}, PullSecret: "{\"auths\":{\"cloud.openshift.com\":{\"auth\":\"dG9rZW46dGVzdAo=\",\"email\":\"coyote@acme.com\"}}}"}
 			cluster.ProxyHash, _ = computeClusterProxyHash(nil, nil, nil)
-			cluster.ImageInfo = &models.ImageInfo{GeneratorVersion: bm.Config.ImageBuilder}
+			cluster.ImageInfo = &models.ImageInfo{}
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 
 			mockS3Client.EXPECT().IsAwsS3().Return(true)
@@ -204,7 +204,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			})
 			Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOCreated()))
 			getReply := bm.GetCluster(ctx, installer.GetClusterParams{ClusterID: clusterId}).(*installer.GetClusterOK)
-			Expect(getReply.Payload.ImageInfo.GeneratorVersion).To(Equal("quay.io/ocpmetal/assisted-iso-create:latest"))
+			Expect(*getReply.Payload.ID).To(Equal(clusterId))
 		})
 
 		It("image expired", func() {
@@ -214,7 +214,7 @@ var _ = Describe("GenerateClusterISO", func() {
 				PullSecretSet: true,
 			}, PullSecret: "{\"auths\":{\"cloud.openshift.com\":{\"auth\":\"dG9rZW46dGVzdAo=\",\"email\":\"coyote@acme.com\"}}}"}
 			cluster.ProxyHash, _ = computeClusterProxyHash(nil, nil, nil)
-			cluster.ImageInfo = &models.ImageInfo{GeneratorVersion: bm.Config.ImageBuilder}
+			cluster.ImageInfo = &models.ImageInfo{}
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 
 			mockS3Client.EXPECT().IsAwsS3().Return(true)
@@ -230,7 +230,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			})
 			Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOCreated()))
 			getReply := bm.GetCluster(ctx, installer.GetClusterParams{ClusterID: clusterId}).(*installer.GetClusterOK)
-			Expect(getReply.Payload.ImageInfo.GeneratorVersion).To(Equal("quay.io/ocpmetal/assisted-iso-create:latest"))
+			Expect(*getReply.Payload.ID).To(Equal(clusterId))
 		})
 
 		It("success with AWS S3", func() {
@@ -247,7 +247,7 @@ var _ = Describe("GenerateClusterISO", func() {
 			})
 			Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOCreated()))
 			getReply := bm.GetCluster(ctx, installer.GetClusterParams{ClusterID: *clusterId}).(*installer.GetClusterOK)
-			Expect(getReply.Payload.ImageInfo.GeneratorVersion).To(Equal("quay.io/ocpmetal/assisted-iso-create:latest"))
+			Expect(getReply.Payload.ID).To(Equal(clusterId))
 		})
 
 		It("cluster_not_exists", func() {
