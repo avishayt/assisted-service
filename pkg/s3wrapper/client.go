@@ -34,6 +34,8 @@ const awsEndpointSuffix = ".amazonaws.com"
 // BaseObjectName?
 const BaseObjectName = "livecd-46.82.202009222340-0.iso"
 
+var ISOFileTypes []string = []string{"initrd.img", "rootfs.img", "vmlinuz"}
+
 //go:generate mockgen -source=client.go -package=s3wrapper -destination=mock_s3wrapper.go
 //go:generate mockgen -package s3wrapper -destination mock_s3iface.go github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 type API interface {
@@ -51,6 +53,7 @@ type API interface {
 	UpdateObjectTimestamp(ctx context.Context, objectName string) (bool, error)
 	ExpireObjects(ctx context.Context, prefix string, deleteTime time.Duration, callback func(ctx context.Context, log logrus.FieldLogger, objectName string))
 	ListObjectsByPrefix(ctx context.Context, prefix string) ([]string, error)
+	ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error
 }
 
 var _ API = &S3Client{}
@@ -381,4 +384,14 @@ func (c *S3Client) ListObjectsByPrefix(ctx context.Context, prefix string) ([]st
 		objects = append(objects, *key.Key)
 	}
 	return objects, nil
+}
+
+func (c *S3Client) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error {
+	log := logutil.FromContext(ctx, c.log)
+	err := ExtractFilesFromISOAndUploadStream(ctx, log, isoFilePath, isoObjectName, c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
 }

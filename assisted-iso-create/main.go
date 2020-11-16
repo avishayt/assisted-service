@@ -33,6 +33,7 @@ func main() {
 	if s3Client == nil {
 		log.Fatal("failed to create S3 client")
 	}
+
 	exists, err := s3Client.DoesObjectExist(ctx, Options.ImageName)
 	if err != nil {
 		log.WithError(err).Fatalf("Failed checking if base image exists")
@@ -44,5 +45,11 @@ func main() {
 		}
 	}
 
-	log.Println("Image successfully uploaded to S3")
+	// Extract files from ISO and upload to S3
+	err = s3Client.ExtractFilesFromISOAndUpload(ctx, Options.BaseISOFile, Options.ImageName)
+	if err != nil {
+		log.WithError(err).Fatalf("Failed to extract files from ISO and upload")
+	}
+
+	log.Println("Images successfully uploaded to S3")
 }
