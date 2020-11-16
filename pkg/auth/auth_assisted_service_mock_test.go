@@ -250,6 +250,10 @@ func (f fakeInventory) UpdateHostInstallerArgs(ctx context.Context, params insta
 	return installer.NewUpdateHostInstallerArgsCreated()
 }
 
+func (f fakeInventory) DownloadBootFiles(ctx context.Context, params installer.DownloadBootFilesParams) middleware.Responder {
+	return installer.NewDownloadBootFilesOK()
+}
+
 var _ restapi.InstallerAPI = fakeInventory{}
 
 type fakeEventsAPI struct{}

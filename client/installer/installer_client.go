@@ -34,6 +34,9 @@ type API interface {
 	   DisableHost disables a host for inclusion in the cluster*/
 	DisableHost(ctx context.Context, params *DisableHostParams) (*DisableHostOK, error)
 	/*
+	   DownloadBootFiles downloads files used for booting servers*/
+	DownloadBootFiles(ctx context.Context, params *DownloadBootFilesParams, writer io.Writer) (*DownloadBootFilesOK, error)
+	/*
 	   DownloadClusterFiles downloads files relating to the installed installing cluster*/
 	DownloadClusterFiles(ctx context.Context, params *DownloadClusterFilesParams, writer io.Writer) (*DownloadClusterFilesOK, error)
 	/*
@@ -292,6 +295,30 @@ func (a *Client) DisableHost(ctx context.Context, params *DisableHostParams) (*D
 		return nil, err
 	}
 	return result.(*DisableHostOK), nil
+
+}
+
+/*
+DownloadBootFiles downloads files used for booting servers
+*/
+func (a *Client) DownloadBootFiles(ctx context.Context, params *DownloadBootFilesParams, writer io.Writer) (*DownloadBootFilesOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "DownloadBootFiles",
+		Method:             "GET",
+		PathPattern:        "/boot-files",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &DownloadBootFilesReader{formats: a.formats, writer: writer},
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DownloadBootFilesOK), nil
 
 }
 

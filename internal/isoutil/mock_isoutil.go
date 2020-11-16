@@ -75,3 +75,18 @@ func (mr *MockHandlerMockRecorder) ReadFile(filePath interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadFile", reflect.TypeOf((*MockHandler)(nil).ReadFile), filePath)
 }
+
+// GetVolumeID mocks base method
+func (m *MockHandler) GetVolumeID() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVolumeID")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVolumeID indicates an expected call of GetVolumeID
+func (mr *MockHandlerMockRecorder) GetVolumeID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVolumeID", reflect.TypeOf((*MockHandler)(nil).GetVolumeID))
+}

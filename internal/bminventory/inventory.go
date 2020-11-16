@@ -4184,3 +4184,21 @@ func (b *bareMetalInventory) configureStaticIPs(cluster *common.Cluster, staticI
 
 	return strings.Join(lines, "\n")
 }
+
+func (b *bareMetalInventory) DownloadBootFiles(ctx context.Context, params installer.DownloadBootFilesParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+
+	// If we're working with AWS, redirect to download directly from there
+	if b.objectHandler.IsAwsS3() {
+		return installer.NewDownloadBootFilesTemporaryRedirect().WithLocation(b.objectHandler.GetS3BootFileURL(s3wrapper.RHCOSBaseObjectName, params.FileType))
+	}
+
+	reader, objectName, contentLength, err := b.objectHandler.DownloadBootFile(ctx, s3wrapper.RHCOSBaseObjectName, params.FileType)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to get %s PXE artifact", params.FileType)
+		return common.GenerateErrorResponder(err)
+	}
+
+	return filemiddleware.NewResponder(installer.NewDownloadBootFilesOK().WithPayload(reader),
+		objectName, contentLength)
+}

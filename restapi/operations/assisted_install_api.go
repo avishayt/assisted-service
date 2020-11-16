@@ -75,6 +75,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		InstallerDisableHostHandler: installer.DisableHostHandlerFunc(func(params installer.DisableHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DisableHost has not yet been implemented")
 		}),
+		InstallerDownloadBootFilesHandler: installer.DownloadBootFilesHandlerFunc(func(params installer.DownloadBootFilesParams) middleware.Responder {
+			return middleware.NotImplemented("operation installer.DownloadBootFiles has not yet been implemented")
+		}),
 		InstallerDownloadClusterFilesHandler: installer.DownloadClusterFilesHandlerFunc(func(params installer.DownloadClusterFilesParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterFiles has not yet been implemented")
 		}),
@@ -294,6 +297,8 @@ type AssistedInstallAPI struct {
 	InstallerDeregisterHostHandler installer.DeregisterHostHandler
 	// InstallerDisableHostHandler sets the operation handler for the disable host operation
 	InstallerDisableHostHandler installer.DisableHostHandler
+	// InstallerDownloadBootFilesHandler sets the operation handler for the download boot files operation
+	InstallerDownloadBootFilesHandler installer.DownloadBootFilesHandler
 	// InstallerDownloadClusterFilesHandler sets the operation handler for the download cluster files operation
 	InstallerDownloadClusterFilesHandler installer.DownloadClusterFilesHandler
 	// InstallerDownloadClusterISOHandler sets the operation handler for the download cluster i s o operation
@@ -500,6 +505,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.InstallerDisableHostHandler == nil {
 		unregistered = append(unregistered, "installer.DisableHostHandler")
+	}
+	if o.InstallerDownloadBootFilesHandler == nil {
+		unregistered = append(unregistered, "installer.DownloadBootFilesHandler")
 	}
 	if o.InstallerDownloadClusterFilesHandler == nil {
 		unregistered = append(unregistered, "installer.DownloadClusterFilesHandler")
@@ -779,6 +787,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
 	o.handlers["DELETE"]["/clusters/{cluster_id}/hosts/{host_id}/actions/enable"] = installer.NewDisableHost(o.context, o.InstallerDisableHostHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/boot-files"] = installer.NewDownloadBootFiles(o.context, o.InstallerDownloadBootFilesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
