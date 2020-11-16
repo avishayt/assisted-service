@@ -29,6 +29,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/jinzhu/gorm v1.9.12
 	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/kdomanski/iso9660 v0.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/metal3-io/baremetal-operator v0.0.0-00010101000000-000000000000
@@ -44,6 +45,7 @@ require (
 	github.com/pborman/uuid v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
+	github.com/prometheus/common v0.9.1
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/slok/go-http-metrics v0.8.0

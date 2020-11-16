@@ -7,6 +7,8 @@ RUN CGO_ENABLED=0 GOFLAGS="" GO111MODULE=on go build -o /build/assisted-iso-crea
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
+RUN yum install -y genisoimage && yum clean all
+
 ARG WORK_DIR=/data
 ARG OS_IMAGE
 ENV COREOS_IMAGE=$WORK_DIR/livecd.iso

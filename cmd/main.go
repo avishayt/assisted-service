@@ -252,6 +252,12 @@ func main() {
 				log.WithError(err).Fatalf("Failed to create client for OCP")
 			}
 		}
+
+		// Extract files from ISO and upload to S3
+		err = objectHandler.ExtractFilesFromISOAndUpload(context.Background(), s3wrapper.FSBaseISOName, s3wrapper.FSBaseISOName)
+		if err != nil {
+			log.WithError(err).Fatalf("Failed to extract and upload files from ISO %s", s3wrapper.FSBaseISOName)
+		}
 	default:
 		log.Fatalf("not supported deploy target %s", Options.DeployTarget)
 	}
