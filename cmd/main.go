@@ -76,6 +76,7 @@ var Options struct {
 	InstructionConfig           host.InstructionConfig
 	ClusterStateMonitorInterval time.Duration `envconfig:"CLUSTER_MONITOR_INTERVAL" default:"10s"`
 	S3Config                    s3wrapper.Config
+	PublicS3Config              s3wrapper.PublicConfig
 	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"8s"`
 	Versions                    versions.Versions
 	OpenshiftVersions           string        `envconfig:"OPENSHIFT_VERSIONS"`
@@ -117,7 +118,7 @@ func InitLogs() *logrus.Entry {
 	return logger
 }
 
-func main() {
+func main() { // nolint: gocyclo
 	err := envconfig.Process("myapp", &Options)
 	log := InitLogs()
 
@@ -209,6 +210,7 @@ func main() {
 
 	var generator generator.ISOInstallConfigGenerator
 	var objectHandler s3wrapper.API
+	var publicObjectHandler s3wrapper.API
 
 	err = bmh_v1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme)
 	if err != nil {
@@ -225,6 +227,19 @@ func main() {
 			log.Fatal("failed to create S3 client, ", err)
 		}
 		createS3Bucket(objectHandler)
+
+		publicObjectHandler = s3wrapper.NewS3Client(&s3wrapper.Config{
+			S3EndpointURL:      Options.PublicS3Config.S3EndpointURL,
+			Region:             Options.PublicS3Config.Region,
+			S3Bucket:           Options.PublicS3Config.S3Bucket,
+			AwsAccessKeyID:     Options.PublicS3Config.AwsAccessKeyID,
+			AwsSecretAccessKey: Options.PublicS3Config.AwsSecretAccessKey,
+			IsPublic:           true,
+		}, log)
+		if publicObjectHandler == nil {
+			log.Fatal("failed to create public S3 client, ", err)
+		}
+		createS3Bucket(publicObjectHandler)
 
 		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme.Scheme})
 		if err != nil {
@@ -264,6 +279,7 @@ func main() {
 		if objectHandler == nil {
 			log.Fatal("failed to create S3 file system client, ", err)
 		}
+		publicObjectHandler = objectHandler
 		createS3Bucket(objectHandler)
 		generator = job.NewLocalJob(log.WithField("pkg", "local-job-wrapper"), Options.JobConfig)
 		if Options.DeployTarget == deployment_type_ocp {
@@ -273,11 +289,6 @@ func main() {
 			}
 		}
 
-		// Extract files from ISO and upload to S3
-		err = objectHandler.ExtractFilesFromISOAndUpload(context.Background(), s3wrapper.FSBaseISOName, s3wrapper.FSBaseISOName)
-		if err != nil {
-			log.WithError(err).Fatalf("Failed to extract and upload files from ISO %s", s3wrapper.FSBaseISOName)
-		}
 	default:
 		log.Fatalf("not supported deploy target %s", Options.DeployTarget)
 	}
@@ -311,7 +322,7 @@ func main() {
 	}
 
 	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig,
-		generator, eventsHandler, objectHandler, metricsManager, *authHandler, ocpClient, lead, pullSecretValidator, versionHandler)
+		generator, eventsHandler, objectHandler, publicObjectHandler, metricsManager, *authHandler, ocpClient, lead, pullSecretValidator, versionHandler)
 
 	deletionWorker := thread.New(
 		log.WithField("inventory", "Deletion Worker"),
@@ -369,22 +380,26 @@ func main() {
 	h = requestid.Middleware(h)
 	h = spec.WithSpecMiddleware(h)
 
+	baseISOUploadLeader := leader.NewElector(k8sClient, leader.Config{LeaseDuration: 5 * time.Second,
+		RetryInterval: 2 * time.Second, Namespace: Options.LeaderConfig.Namespace, RenewDeadline: 4 * time.Second},
+		"assisted-service-baseiso-helper",
+		log.WithField("pkg", "baseISOUploadLeader"))
 	switch Options.DeployTarget {
 	case deployment_type_k8s:
 		go func() {
 			defer apiEnabler.Enable()
-			baseISOUploadLeader := leader.NewElector(k8sClient, leader.Config{LeaseDuration: 5 * time.Second,
-				RetryInterval: 2 * time.Second, Namespace: Options.LeaderConfig.Namespace, RenewDeadline: 4 * time.Second},
-				"assisted-service-baseiso-helper",
-				log.WithField("pkg", "baseISOUploadLeader"))
-			err = uploadBaseISOWithLeader(baseISOUploadLeader, objectHandler, generator, log)
+			err = publicObjectHandler.UploadBootFilesWithLeader(context.Background(), baseISOUploadLeader, Options.RHCOSBaseImage)
 			if err != nil {
-				log.WithError(err).Fatal("Failed uploading base ISO")
+				log.WithError(err).Fatal("Failed uploading boot files")
 			}
 		}()
 	case deployment_type_ocp:
 		go func() {
 			defer apiEnabler.Enable()
+			err = publicObjectHandler.UploadBootFilesWithLeader(context.Background(), baseISOUploadLeader, Options.RHCOSBaseImage)
+			if err != nil {
+				log.WithError(err).Fatal("Failed uploading boot files")
+			}
 			err = bm.RegisterOCPCluster(context.Background())
 			if err != nil {
 				log.WithError(err).Fatal("Failed to create OCP cluster")
@@ -453,60 +468,5 @@ func autoMigrationWithLeader(migrationLeader leader.ElectorInterface, db *gorm.D
 		log.Info("Finished manual migrations")
 
 		return nil
-	})
-}
-
-func uploadBaseISOWithLeader(uploadLeader leader.ElectorInterface, objectHandler s3wrapper.API, generator generator.ISOInstallConfigGenerator, log logrus.FieldLogger) error {
-
-	ctx := context.Background()
-
-	if Options.RHCOSBaseImage == "" {
-		s3wrapper.BaseObjectName = s3wrapper.RHCOSBaseObjectName
-	} else {
-		// Need to get the volume id from the ISO provided
-		iso, err := os.Open(Options.RHCOSBaseImage)
-		if err != nil {
-			log.WithError(err).Fatal("Failed to open provided base image for inspection")
-			return err
-		}
-		defer iso.Close()
-
-		// Need a method to identify the ISO provided
-		// The first 32768 bytes are unused by the ISO 9660 standard, typically for bootable media
-		// This is where the data area begins and the 32 byte string representing the volume identifier
-		// is offset 40 bytes into the primary volume descriptor
-		volumeId := make([]byte, 32)
-		_, err = iso.ReadAt(volumeId, 32808)
-		if err != nil {
-			log.WithError(err).Fatal("Failed to read volume id from provided base image")
-			return err
-		}
-		// TODO: Should we verify that the volume id is of the form `rhcos-<version>`?
-		s3wrapper.BaseObjectName = strings.TrimSpace(string(volumeId)) + ".iso"
-	}
-
-	return uploadLeader.RunWithLeader(ctx, func() error {
-		log.Info("Checking for Base ISO")
-		exists, err := objectHandler.DoesObjectExist(ctx, s3wrapper.BaseObjectName)
-		if err != nil {
-			return err
-		}
-		if exists {
-			log.Info("Base ISO exists, skipping upload job")
-			return nil
-		}
-
-		log.Info("Starting Base ISO upload")
-		// If not provided to the assisted-service, use fallback URL
-		if Options.RHCOSBaseImage == "" {
-			resp, err := http.Get(s3wrapper.RHCOSBaseURL)
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-			return objectHandler.UploadStream(ctx, resp.Body, s3wrapper.BaseObjectName)
-		}
-
-		return objectHandler.UploadFile(ctx, Options.RHCOSBaseImage, s3wrapper.BaseObjectName)
 	})
 }

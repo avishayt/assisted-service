@@ -7,6 +7,7 @@ package s3wrapper
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	leader "github.com/openshift/assisted-service/pkg/leader"
 	logrus "github.com/sirupsen/logrus"
 	io "io"
 	reflect "reflect"
@@ -236,4 +237,49 @@ func (m *MockAPI) ListObjectsByPrefix(ctx context.Context, prefix string) ([]str
 func (mr *MockAPIMockRecorder) ListObjectsByPrefix(ctx, prefix interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectsByPrefix", reflect.TypeOf((*MockAPI)(nil).ListObjectsByPrefix), ctx, prefix)
+}
+
+// UploadBootFilesWithLeader mocks base method
+func (m *MockAPI) UploadBootFilesWithLeader(ctx context.Context, uploadLeader leader.ElectorInterface, isoFilePath string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadBootFilesWithLeader", ctx, uploadLeader, isoFilePath)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadBootFilesWithLeader indicates an expected call of UploadBootFilesWithLeader
+func (mr *MockAPIMockRecorder) UploadBootFilesWithLeader(ctx, uploadLeader, isoFilePath interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBootFilesWithLeader", reflect.TypeOf((*MockAPI)(nil).UploadBootFilesWithLeader), ctx, uploadLeader, isoFilePath)
+}
+
+// DownloadBootFile mocks base method
+func (m *MockAPI) DownloadBootFile(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownloadBootFile", ctx, fileType)
+	ret0, _ := ret[0].(io.ReadCloser)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(int64)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// DownloadBootFile indicates an expected call of DownloadBootFile
+func (mr *MockAPIMockRecorder) DownloadBootFile(ctx, fileType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadBootFile", reflect.TypeOf((*MockAPI)(nil).DownloadBootFile), ctx, fileType)
+}
+
+// GetS3BootFileURL mocks base method
+func (m *MockAPI) GetS3BootFileURL(fileType string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetS3BootFileURL", fileType)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetS3BootFileURL indicates an expected call of GetS3BootFileURL
+func (mr *MockAPIMockRecorder) GetS3BootFileURL(fileType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetS3BootFileURL", reflect.TypeOf((*MockAPI)(nil).GetS3BootFileURL), fileType)
 }

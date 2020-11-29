@@ -26,16 +26,17 @@ const copyPartChunkSizeBytes = 64 * 1024 * 1024 // 64MB
 const coreISOMagic = "coreiso+"
 
 type ISOUploaderAPI interface {
-	UploadISO(ctx context.Context, ignitionConfig, objectName string) error
+	UploadISO(ctx context.Context, ignitionConfig, destISOObjectName string) error
 }
 
 var _ ISOUploaderAPI = &ISOUploader{}
 
 type ISOUploader struct {
-	log       logrus.FieldLogger
-	s3client  s3iface.S3API
-	bucket    string
-	infoCache []isoInfo
+	log          logrus.FieldLogger
+	s3client     s3iface.S3API
+	bucket       string
+	publicBucket string
+	infoCache    []isoInfo
 }
 
 type isoInfo struct {
@@ -45,15 +46,15 @@ type isoInfo struct {
 	areaLengthBytes int64
 }
 
-func NewISOUploader(logger logrus.FieldLogger, s3Client s3iface.S3API, bucket string) *ISOUploader {
-	return &ISOUploader{log: logger, s3client: s3Client, bucket: bucket}
+func NewISOUploader(logger logrus.FieldLogger, s3Client s3iface.S3API, bucket, publicBucket string) *ISOUploader {
+	return &ISOUploader{log: logger, s3client: s3Client, bucket: bucket, publicBucket: publicBucket}
 }
 
-func (u *ISOUploader) UploadISO(ctx context.Context, ignitionConfig, objectName string) error {
+func (u *ISOUploader) UploadISO(ctx context.Context, ignitionConfig, destISOObjectName string) error {
 	log := logutil.FromContext(ctx, u.log)
-	log.Debugf("Started upload of ISO %s", objectName)
+	log.Debugf("Started upload of ISO %s", destISOObjectName)
 
-	baseISOInfo, origContents, err := u.getISOInfo(BaseObjectName, log)
+	baseISOInfo, origContents, err := u.getISOInfo(baseISOObjectName, log)
 	if err != nil {
 		err = errors.Wrapf(err, "Failed to fetch base ISO information")
 		log.Error(err)
@@ -66,29 +67,29 @@ func (u *ISOUploader) UploadISO(ctx context.Context, ignitionConfig, objectName 
 		uploader:        u,
 		isoInfo:         baseISOInfo,
 		origContents:    origContents,
-		sourceObjectKey: BaseObjectName,
-		destObjectKey:   objectName,
+		sourceObjectKey: baseISOObjectName,
+		destObjectKey:   destISOObjectName,
 	}
 	err = upload.Upload(ignitionConfig)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to create ISO %s", objectName)
+		err = errors.Wrapf(err, "Failed to create ISO %s", destISOObjectName)
 		log.Error(err)
 		return err
 	}
 	return nil
 }
 
-func (u *ISOUploader) getISOInfo(baseObjectName string, log logrus.FieldLogger) (*isoInfo, *[]byte, error) {
+func (u *ISOUploader) getISOInfo(isoObjectName string, log logrus.FieldLogger) (*isoInfo, *[]byte, error) {
 	var info isoInfo
 	var origContents []byte
 
 	// Get ETag from S3
 	headResp, err := u.s3client.HeadObject(&s3.HeadObjectInput{
-		Bucket: aws.String(u.bucket),
-		Key:    aws.String(baseObjectName),
+		Bucket: aws.String(u.publicBucket),
+		Key:    aws.String(isoObjectName),
 	})
 	if err != nil {
-		log.WithError(err).Errorf("Failed to fetch metadata for base object %s", baseObjectName)
+		log.WithError(err).Errorf("Failed to fetch metadata for base object %s", isoObjectName)
 		return nil, nil, err
 	}
 
@@ -103,11 +104,11 @@ func (u *ISOUploader) getISOInfo(baseObjectName string, log logrus.FieldLogger) 
 
 	if found == nil {
 		// Add to cache if not found
-		log.Infof("Did not find ISO info for %s in cache, will add", baseObjectName)
+		log.Infof("Did not find ISO info for %s in cache, will add", isoObjectName)
 		var offset, length int64
-		offset, length, err = u.getISOHeaderInfo(log, baseObjectName, *headResp.ContentLength)
+		offset, length, err = u.getISOHeaderInfo(log, isoObjectName, *headResp.ContentLength)
 		if err != nil {
-			err = errors.Wrapf(err, "Failed to get base ISO info for %s from S3", baseObjectName)
+			err = errors.Wrapf(err, "Failed to get base ISO info for %s from S3", isoObjectName)
 			log.Error(err)
 			return nil, nil, err
 		}
@@ -118,18 +119,18 @@ func (u *ISOUploader) getISOInfo(baseObjectName string, log logrus.FieldLogger) 
 
 		var getRest *s3.GetObjectOutput
 		getRest, err = u.s3client.GetObject(&s3.GetObjectInput{
-			Bucket: aws.String(u.bucket),
-			Key:    aws.String(baseObjectName),
+			Bucket: aws.String(u.publicBucket),
+			Key:    aws.String(isoObjectName),
 			Range:  aws.String(fmt.Sprintf("bytes=%d-%d", offset, offset+minimumPartSizeBytes-1)),
 		})
 		if err != nil {
-			err = errors.Wrapf(err, "Failed to fetch embedded area of live ISO %s", baseObjectName)
+			err = errors.Wrapf(err, "Failed to fetch embedded area of live ISO %s", isoObjectName)
 			log.Error(err)
 			return nil, nil, err
 		}
 		origContents, err = ioutil.ReadAll(getRest.Body)
 		if err != nil {
-			err = errors.Wrapf(err, "Failed to fetch body from embedded area of live ISO %s", baseObjectName)
+			err = errors.Wrapf(err, "Failed to fetch body from embedded area of live ISO %s", isoObjectName)
 			log.Error(err)
 			return nil, nil, err
 		}
@@ -143,10 +144,10 @@ func (u *ISOUploader) getISOInfo(baseObjectName string, log logrus.FieldLogger) 
 		}
 	} else {
 		// Return from cache
-		log.Debugf("Found ISO info for %s in cache", baseObjectName)
+		log.Debugf("Found ISO info for %s in cache", isoObjectName)
 		origContents, err = ioutil.ReadFile(cachePath)
 		if err != nil {
-			err = errors.Wrapf(err, "Failed to fetch embedded area of live ISO %s from disk cache", baseObjectName)
+			err = errors.Wrapf(err, "Failed to fetch embedded area of live ISO %s from disk cache", isoObjectName)
 			log.Error(err)
 			return nil, nil, err
 		}
@@ -155,20 +156,20 @@ func (u *ISOUploader) getISOInfo(baseObjectName string, log logrus.FieldLogger) 
 	return &info, &origContents, nil
 }
 
-func (u *ISOUploader) getISOHeaderInfo(log logrus.FieldLogger, baseObjectName string, baseObjectSize int64) (offset int64, length int64, err error) {
+func (u *ISOUploader) getISOHeaderInfo(log logrus.FieldLogger, isoObjectName string, baseObjectSize int64) (offset int64, length int64, err error) {
 	// Download header of the live ISO (last 24 bytes of the first 32KB)
 	getResp, err := u.s3client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(u.bucket),
-		Key:    aws.String(baseObjectName),
+		Bucket: aws.String(u.publicBucket),
+		Key:    aws.String(isoObjectName),
 		Range:  aws.String("bytes=32744-32767"),
 	})
 	if err != nil {
-		log.WithError(err).Errorf("Failed to get header of object %s from bucket %s", baseObjectName, u.bucket)
+		log.WithError(err).Errorf("Failed to get header of object %s from bucket %s", isoObjectName, u.publicBucket)
 		return
 	}
 	headerString, err := ioutil.ReadAll(getResp.Body)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to read header of object %s from bucket %s", baseObjectName, u.bucket)
+		log.WithError(err).Errorf("Failed to read header of object %s from bucket %s", isoObjectName, u.publicBucket)
 		return
 	}
 
@@ -368,7 +369,7 @@ func (m *multiUpload) uploadPartCopy(c chunk) error {
 	completedPartCopy, err := m.uploader.s3client.UploadPartCopyWithContext(m.ctx, &s3.UploadPartCopyInput{
 		Bucket:          aws.String(m.uploader.bucket),
 		Key:             aws.String(m.destObjectKey),
-		CopySource:      aws.String(fmt.Sprintf("/%s/%s", m.uploader.bucket, m.sourceObjectKey)),
+		CopySource:      aws.String(fmt.Sprintf("/%s/%s", m.uploader.publicBucket, m.sourceObjectKey)),
 		CopySourceRange: aws.String(fmt.Sprintf("bytes=%d-%d", c.sourceStartBytes, c.sourceEndBytes)),
 		PartNumber:      aws.Int64(c.partNum),
 		UploadId:        aws.String(m.uploadID),
