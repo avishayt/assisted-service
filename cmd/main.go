@@ -75,6 +75,7 @@ var Options struct {
 	InstructionConfig           host.InstructionConfig
 	ClusterStateMonitorInterval time.Duration `envconfig:"CLUSTER_MONITOR_INTERVAL" default:"10s"`
 	S3Config                    s3wrapper.Config
+	PublicS3Config              s3wrapper.PublicConfig
 	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"8s"`
 	Versions                    versions.Versions
 	CreateS3Bucket              bool          `envconfig:"CREATE_S3_BUCKET" default:"false"`
@@ -194,6 +195,7 @@ func main() {
 
 	var generator generator.ISOInstallConfigGenerator
 	var objectHandler s3wrapper.API
+	var publicObjectHandler s3wrapper.API
 
 	err = bmh_v1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme)
 	if err != nil {
@@ -210,6 +212,12 @@ func main() {
 			log.Fatal("failed to create S3 client, ", err)
 		}
 		createS3Bucket(objectHandler)
+
+		publicObjectHandler = s3wrapper.NewS3Client(&Options.PublicS3Config, log)
+		if publicObjectHandler == nil {
+			log.Fatal("failed to create public S3 client, ", err)
+		}
+		createS3Bucket(publicObjectHandler)
 
 		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme.Scheme})
 		if err != nil {
@@ -249,6 +257,7 @@ func main() {
 		if objectHandler == nil {
 			log.Fatal("failed to create S3 file system client, ", err)
 		}
+		publicObjectHandler = objectHandler
 		createS3Bucket(objectHandler)
 		generator = job.NewLocalJob(log.WithField("pkg", "local-job-wrapper"), Options.JobConfig)
 		if Options.DeployTarget == deployment_type_ocp {
@@ -296,7 +305,7 @@ func main() {
 	}
 
 	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig,
-		generator, eventsHandler, objectHandler, metricsManager, *authHandler, ocpClient, lead, pullSecretValidator)
+		generator, eventsHandler, objectHandler, publicObjectHandler, metricsManager, *authHandler, ocpClient, lead, pullSecretValidator)
 
 	deletionWorker := thread.New(
 		log.WithField("inventory", "Deletion Worker"),

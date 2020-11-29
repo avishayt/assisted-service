@@ -243,18 +243,19 @@ type OCPClusterAPI interface {
 
 type bareMetalInventory struct {
 	Config
-	db              *gorm.DB
-	log             logrus.FieldLogger
-	hostApi         host.API
-	clusterApi      cluster.API
-	eventsHandler   events.Handler
-	objectHandler   s3wrapper.API
-	metricApi       metrics.API
-	generator       generator.ISOInstallConfigGenerator
-	authHandler     auth.AuthHandler
-	k8sClient       k8sclient.K8SClient
-	leaderElector   leader.Leader
-	secretValidator validations.PullSecretValidator
+	db                  *gorm.DB
+	log                 logrus.FieldLogger
+	hostApi             host.API
+	clusterApi          cluster.API
+	eventsHandler       events.Handler
+	objectHandler       s3wrapper.API
+	publicObjectHandler s3wrapper.API
+	metricApi           metrics.API
+	generator           generator.ISOInstallConfigGenerator
+	authHandler         auth.AuthHandler
+	k8sClient           k8sclient.K8SClient
+	leaderElector       leader.Leader
+	secretValidator     validations.PullSecretValidator
 }
 
 var _ restapi.InstallerAPI = &bareMetalInventory{}
@@ -268,6 +269,7 @@ func NewBareMetalInventory(
 	generator generator.ISOInstallConfigGenerator,
 	eventsHandler events.Handler,
 	objectHandler s3wrapper.API,
+	publicObjectHandler s3wrapper.API,
 	metricApi metrics.API,
 	authHandler auth.AuthHandler,
 	k8sClient k8sclient.K8SClient,
@@ -275,19 +277,20 @@ func NewBareMetalInventory(
 	pullSecretValidator validations.PullSecretValidator,
 ) *bareMetalInventory {
 	return &bareMetalInventory{
-		db:              db,
-		log:             log,
-		Config:          cfg,
-		hostApi:         hostApi,
-		clusterApi:      clusterApi,
-		generator:       generator,
-		eventsHandler:   eventsHandler,
-		objectHandler:   objectHandler,
-		metricApi:       metricApi,
-		authHandler:     authHandler,
-		k8sClient:       k8sClient,
-		leaderElector:   leaderElector,
-		secretValidator: pullSecretValidator,
+		db:                  db,
+		log:                 log,
+		Config:              cfg,
+		hostApi:             hostApi,
+		clusterApi:          clusterApi,
+		generator:           generator,
+		eventsHandler:       eventsHandler,
+		objectHandler:       objectHandler,
+		publicObjectHandler: publicObjectHandler,
+		metricApi:           metricApi,
+		authHandler:         authHandler,
+		k8sClient:           k8sClient,
+		leaderElector:       leaderElector,
+		secretValidator:     pullSecretValidator,
 	}
 }
 
@@ -3387,7 +3390,7 @@ func (b *bareMetalInventory) uploadLogs(ctx context.Context, params installer.Up
 	}
 	fileName := b.getLogsFullName(params.ClusterID.String(), params.LogsType)
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName)
+	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName, false)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3", fileName)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3414,7 +3417,7 @@ func (b *bareMetalInventory) uploadHostLogs(ctx context.Context, clusterId strin
 	fileName := b.getLogsFullName(clusterId, hostId)
 
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, upFile, fileName)
+	err = b.objectHandler.UploadStream(ctx, upFile, fileName, false)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3 for host %s", fileName, hostId)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3875,4 +3878,22 @@ func (b *bareMetalInventory) setPullSecretFromOCP(cluster *common.Cluster, log l
 	}
 	setPullSecret(cluster, pullSecret)
 	return nil
+}
+
+func (b *bareMetalInventory) DownloadPXEArtifact(ctx context.Context, params installer.DownloadPXEArtifactParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+
+	// If we're working with AWS, redirect to download directly from there
+	if b.publicObjectHandler.IsAwsS3() {
+		return installer.NewDownloadPXEArtifactTemporaryRedirect().WithLocation(b.publicObjectHandler.GetS3PXEArtifactURL(params.FileType))
+	}
+
+	reader, objectName, contentLength, err := b.publicObjectHandler.DownloadPXEArtifact(ctx, params.FileType)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to get %s PXE artifact", params.FileType)
+		return common.GenerateErrorResponder(err)
+	}
+
+	return filemiddleware.NewResponder(installer.NewDownloadPXEArtifactOK().WithPayload(reader),
+		objectName, contentLength)
 }

@@ -33,7 +33,8 @@ func FixEndpointURL(endpoint string) (string, error) {
 
 func ExtractFilesFromISOAndUploadStream(ctx context.Context, log logrus.FieldLogger, isoFilePath, isoObjectName string, api API) error {
 	destPrefix := strings.TrimSuffix(isoObjectName, ".iso")
-	for _, fileType := range ISOFileTypes {
+	var isoFileTypes []string = []string{"initrd.img", "rootfs.img", "vmlinuz"}
+	for _, fileType := range isoFileTypes {
 		objectName := destPrefix + "." + fileType
 		exists, err := api.DoesObjectExist(ctx, objectName)
 		if err != nil {

@@ -286,3 +286,13 @@ func (f *FSClient) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath
 	}
 	return nil
 }
+
+func (f *FSClient) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	reader, contentLength, err := f.Download(ctx, objectName)
+	return reader, objectName, contentLength, err
+}
+
+func (f *FSClient) GetS3PXEArtifactURL(fileType string) string {
+	return ""
+}

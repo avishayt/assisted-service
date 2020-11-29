@@ -39,8 +39,6 @@ const RHCOSBaseObjectName = "rhcos-46.82.202010091720-0.iso"
 // assisted-service at runtime.
 var BaseObjectName string
 
-var ISOFileTypes []string = []string{"initrd.img", "rootfs.img", "vmlinuz"}
-
 //go:generate mockgen -source=client.go -package=s3wrapper -destination=mock_s3wrapper.go
 //go:generate mockgen -package s3wrapper -destination mock_s3iface.go github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 type API interface {
@@ -59,6 +57,8 @@ type API interface {
 	ExpireObjects(ctx context.Context, prefix string, deleteTime time.Duration, callback func(ctx context.Context, log logrus.FieldLogger, objectName string))
 	ListObjectsByPrefix(ctx context.Context, prefix string) ([]string, error)
 	ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error
+	DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error)
+	GetS3PXEArtifactURL(fileType string) string
 }
 
 var _ API = &S3Client{}
@@ -77,6 +77,16 @@ type Config struct {
 	S3Bucket           string `envconfig:"S3_BUCKET"`
 	AwsAccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID"`
 	AwsSecretAccessKey string `envconfig:"AWS_SECRET_ACCESS_KEY"`
+	IsPublic           bool   false
+}
+
+type PublicConfig struct {
+	S3EndpointURL      string `envconfig:"S3_ENDPOINT_URL_PUBLIC"`
+	Region             string `envconfig:"S3_REGION_PUBLIC"`
+	S3Bucket           string `envconfig:"S3_BUCKET_PUBLIC"`
+	AwsAccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID_PUBLIC"`
+	AwsSecretAccessKey string `envconfig:"AWS_SECRET_ACCESS_KEY_PUBLIC"`
+	IsPublic           bool   true
 }
 
 const timestampTagKey = "create_sec_since_epoch"
@@ -149,11 +159,16 @@ func (c *S3Client) CreateBucket() error {
 func (c *S3Client) UploadStream(ctx context.Context, reader io.Reader, objectName string) error {
 	log := logutil.FromContext(ctx, c.log)
 	uploader := s3manager.NewUploader(c.session)
-	_, err := uploader.Upload(&s3manager.UploadInput{
+	input := s3manager.UploadInput{
 		Bucket: aws.String(c.cfg.S3Bucket),
 		Key:    aws.String(objectName),
 		Body:   reader,
-	})
+	}
+	if c.cfg.IsPublic {
+		input.ACL = aws.String(s3.BucketCannedACLPublicRead)
+	}
+
+	_, err := uploader.Upload(&input)
 	if err != nil {
 		err = errors.Wrapf(err, "Unable to upload %s to bucket %s", objectName, c.cfg.S3Bucket)
 		log.Error(err)
@@ -178,10 +193,16 @@ func (c *S3Client) UploadFile(ctx context.Context, filePath, objectName string) 
 
 func (c *S3Client) UploadISO(ctx context.Context, ignitionConfig, objectPrefix string) error {
 	objectName := fmt.Sprintf("%s.iso", objectPrefix)
+	if c.cfg.IsPublic {
+		return errors.New(fmt.Sprintf("Attempted to upload personalized ISO to public bucket", objectName))
+	}
 	return c.isoUploader.UploadISO(ctx, ignitionConfig, objectName)
 }
 
 func (c *S3Client) Upload(ctx context.Context, data []byte, objectName string) error {
+	if c.cfg.IsPublic {
+		return errors.New(fmt.Sprintf("Attempted to upload potentially non-public data to public bucket (%s)", objectName))
+	}
 	reader := bytes.NewReader(data)
 	return c.UploadStream(ctx, reader, objectName)
 }
@@ -399,4 +420,19 @@ func (c *S3Client) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath
 		return err
 	}
 	return nil
+}
+
+func (c *S3Client) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	reader, contentLength, err := c.Download(ctx, objectName)
+	return reader, objectName, contentLength, err
+}
+
+func (c *S3Client) GetS3PXEArtifactURL(fileType string) string {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	if c.cfg.S3EndpointURL == "" {
+		return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", c.cfg.S3Bucket, c.cfg.Region, objectName)
+	} else {
+		return fmt.Sprintf("%s/%s", c.cfg.S3EndpointURL, objectName)
+	}
 }
