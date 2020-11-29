@@ -2359,6 +2359,48 @@ paths:
           schema:
             $ref: '#/definitions/error'
 
+  /pxe-artifacts:
+    get:
+      tags:
+        - installer
+      security: []
+      summary: Downloads PXE artifact.
+      operationId: DownloadPXEArtifact
+      produces:
+        - application/octet-stream
+      parameters:
+        - in: query
+          name: file_type
+          type: string
+          enum: [initrd.img, rootfs.img, vmlinuz]
+          required: true
+      responses:
+        200:
+          description: Success.
+          schema:
+            type: file
+        307:
+          description: Redirect.
+          headers:
+            Location:
+              type: string
+        401:
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        403:
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        500:
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        503:
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
+
   /assisted-service-iso:
     post:
       tags:
@@ -2388,6 +2430,10 @@ paths:
             $ref: '#/definitions/infra_error'
         500:
           description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        503:
+          description: Unavailable.
           schema:
             $ref: '#/definitions/error'
 
@@ -2424,6 +2470,10 @@ paths:
           description: Error.
           schema:
             $ref: '#/definitions/error'
+        503:
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
 
   /assisted-service-iso/presigned:
     get:
@@ -2452,6 +2502,10 @@ paths:
             $ref: '#/definitions/error'
         500:
           description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        503:
+          description: Unavailable.
           schema:
             $ref: '#/definitions/error'
 

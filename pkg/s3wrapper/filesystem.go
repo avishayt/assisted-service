@@ -93,7 +93,7 @@ func (f *FSClient) UploadISO(ctx context.Context, ignitionConfig, objectPrefix s
 	return nil
 }
 
-func (f *FSClient) UploadStream(ctx context.Context, reader io.Reader, objectName string) error {
+func (f *FSClient) UploadStream(ctx context.Context, reader io.Reader, objectName string, public bool) error {
 	log := logutil.FromContext(ctx, f.log)
 	filePath := filepath.Join(f.basedir, objectName)
 	if err := os.MkdirAll(path.Dir(filePath), 0755); err != nil {
@@ -285,4 +285,14 @@ func (f *FSClient) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath
 		return err
 	}
 	return nil
+}
+
+func (f *FSClient) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	reader, contentLength, err := f.Download(ctx, objectName)
+	return reader, objectName, contentLength, err
+}
+
+func (f *FSClient) GetS3PXEArtifactURL(fileType string) string {
+	return ""
 }

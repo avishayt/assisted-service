@@ -231,3 +231,47 @@ func (o *DownloadISOInternalServerError) WriteResponse(rw http.ResponseWriter, p
 		}
 	}
 }
+
+// DownloadISOServiceUnavailableCode is the HTTP code returned for type DownloadISOServiceUnavailable
+const DownloadISOServiceUnavailableCode int = 503
+
+/*DownloadISOServiceUnavailable Unavailable.
+
+swagger:response downloadISOServiceUnavailable
+*/
+type DownloadISOServiceUnavailable struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.Error `json:"body,omitempty"`
+}
+
+// NewDownloadISOServiceUnavailable creates DownloadISOServiceUnavailable with default headers values
+func NewDownloadISOServiceUnavailable() *DownloadISOServiceUnavailable {
+
+	return &DownloadISOServiceUnavailable{}
+}
+
+// WithPayload adds the payload to the download i s o service unavailable response
+func (o *DownloadISOServiceUnavailable) WithPayload(payload *models.Error) *DownloadISOServiceUnavailable {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the download i s o service unavailable response
+func (o *DownloadISOServiceUnavailable) SetPayload(payload *models.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *DownloadISOServiceUnavailable) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(503)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}

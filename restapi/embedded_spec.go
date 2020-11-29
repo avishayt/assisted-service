@@ -132,6 +132,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           }
         }
       }
@@ -186,6 +192,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           }
         }
       }
@@ -233,6 +245,12 @@ func init() {
           },
           "500": {
             "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -3747,6 +3765,72 @@ func init() {
           },
           "500": {
             "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/pxe-artifacts": {
+      "get": {
+        "security": [],
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "installer"
+        ],
+        "summary": "Downloads PXE artifact.",
+        "operationId": "DownloadPXEArtifact",
+        "parameters": [
+          {
+            "enum": [
+              "initrd.img",
+              "rootfs.img",
+              "vmlinuz"
+            ],
+            "type": "string",
+            "name": "file_type",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "307": {
+            "description": "Redirect.",
+            "headers": {
+              "Location": {
+                "type": "string"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -5671,6 +5755,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           }
         }
       }
@@ -5725,6 +5815,12 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           }
         }
       }
@@ -5772,6 +5868,12 @@ func init() {
           },
           "500": {
             "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -9286,6 +9388,72 @@ func init() {
           },
           "500": {
             "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/pxe-artifacts": {
+      "get": {
+        "security": [],
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "installer"
+        ],
+        "summary": "Downloads PXE artifact.",
+        "operationId": "DownloadPXEArtifact",
+        "parameters": [
+          {
+            "enum": [
+              "initrd.img",
+              "rootfs.img",
+              "vmlinuz"
+            ],
+            "type": "string",
+            "name": "file_type",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "307": {
+            "description": "Redirect.",
+            "headers": {
+              "Location": {
+                "type": "string"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }

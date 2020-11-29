@@ -238,6 +238,10 @@ func (f fakeInventory) UpdateHostInstallerArgs(ctx context.Context, params insta
 	return installer.NewUpdateHostInstallerArgsCreated()
 }
 
+func (f fakeInventory) DownloadPXEArtifact(ctx context.Context, params installer.DownloadPXEArtifactParams) middleware.Responder {
+	return installer.NewDownloadPXEArtifactOK()
+}
+
 var _ restapi.InstallerAPI = fakeInventory{}
 
 type fakeEventsAPI struct{}

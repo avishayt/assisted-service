@@ -99,6 +99,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		AssistedServiceIsoDownloadISOHandler: assisted_service_iso.DownloadISOHandlerFunc(func(params assisted_service_iso.DownloadISOParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation assisted_service_iso.DownloadISO has not yet been implemented")
 		}),
+		InstallerDownloadPXEArtifactHandler: installer.DownloadPXEArtifactHandlerFunc(func(params installer.DownloadPXEArtifactParams) middleware.Responder {
+			return middleware.NotImplemented("operation installer.DownloadPXEArtifact has not yet been implemented")
+		}),
 		InstallerEnableHostHandler: installer.EnableHostHandlerFunc(func(params installer.EnableHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.EnableHost has not yet been implemented")
 		}),
@@ -301,6 +304,8 @@ type AssistedInstallAPI struct {
 	InstallerDownloadHostLogsHandler installer.DownloadHostLogsHandler
 	// AssistedServiceIsoDownloadISOHandler sets the operation handler for the download i s o operation
 	AssistedServiceIsoDownloadISOHandler assisted_service_iso.DownloadISOHandler
+	// InstallerDownloadPXEArtifactHandler sets the operation handler for the download p x e artifact operation
+	InstallerDownloadPXEArtifactHandler installer.DownloadPXEArtifactHandler
 	// InstallerEnableHostHandler sets the operation handler for the enable host operation
 	InstallerEnableHostHandler installer.EnableHostHandler
 	// InstallerGenerateClusterISOHandler sets the operation handler for the generate cluster i s o operation
@@ -509,6 +514,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.AssistedServiceIsoDownloadISOHandler == nil {
 		unregistered = append(unregistered, "assisted_service_iso.DownloadISOHandler")
+	}
+	if o.InstallerDownloadPXEArtifactHandler == nil {
+		unregistered = append(unregistered, "installer.DownloadPXEArtifactHandler")
 	}
 	if o.InstallerEnableHostHandler == nil {
 		unregistered = append(unregistered, "installer.EnableHostHandler")
@@ -787,6 +795,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/assisted-service-iso/data"] = assisted_service_iso.NewDownloadISO(o.context, o.AssistedServiceIsoDownloadISOHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/pxe-artifacts"] = installer.NewDownloadPXEArtifact(o.context, o.InstallerDownloadPXEArtifactHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

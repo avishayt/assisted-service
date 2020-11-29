@@ -3311,7 +3311,7 @@ func (b *bareMetalInventory) uploadLogs(ctx context.Context, params installer.Up
 	}
 	fileName := b.getLogsFullName(params.ClusterID.String(), params.LogsType)
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName)
+	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName, false)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3", fileName)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3338,7 +3338,7 @@ func (b *bareMetalInventory) uploadHostLogs(ctx context.Context, clusterId strin
 	fileName := b.getLogsFullName(clusterId, hostId)
 
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, upFile, fileName)
+	err = b.objectHandler.UploadStream(ctx, upFile, fileName, false)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3 for host %s", fileName, hostId)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3799,4 +3799,22 @@ func (b *bareMetalInventory) setPullSecretFromOCP(cluster *common.Cluster, log l
 	}
 	setPullSecret(cluster, pullSecret)
 	return nil
+}
+
+func (b *bareMetalInventory) DownloadPXEArtifact(ctx context.Context, params installer.DownloadPXEArtifactParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+
+	// If we're working with AWS, redirect to download directly from there
+	if b.objectHandler.IsAwsS3() {
+		return installer.NewDownloadPXEArtifactTemporaryRedirect().WithLocation(b.objectHandler.GetS3PXEArtifactURL(params.FileType))
+	}
+
+	reader, objectName, contentLength, err := b.objectHandler.DownloadPXEArtifact(ctx, params.FileType)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to get %s PXE artifact", params.FileType)
+		return common.GenerateErrorResponder(err)
+	}
+
+	return filemiddleware.NewResponder(installer.NewDownloadPXEArtifactOK().WithPayload(reader),
+		objectName, contentLength)
 }

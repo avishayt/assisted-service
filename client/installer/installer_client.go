@@ -52,6 +52,9 @@ type API interface {
 	   DownloadHostLogs downloads host logs*/
 	DownloadHostLogs(ctx context.Context, params *DownloadHostLogsParams, writer io.Writer) (*DownloadHostLogsOK, error)
 	/*
+	   DownloadPXEArtifact downloads p x e artifact*/
+	DownloadPXEArtifact(ctx context.Context, params *DownloadPXEArtifactParams, writer io.Writer) (*DownloadPXEArtifactOK, error)
+	/*
 	   EnableHost enables a host for inclusion in the cluster*/
 	EnableHost(ctx context.Context, params *EnableHostParams) (*EnableHostOK, error)
 	/*
@@ -436,6 +439,30 @@ func (a *Client) DownloadHostLogs(ctx context.Context, params *DownloadHostLogsP
 		return nil, err
 	}
 	return result.(*DownloadHostLogsOK), nil
+
+}
+
+/*
+DownloadPXEArtifact downloads p x e artifact
+*/
+func (a *Client) DownloadPXEArtifact(ctx context.Context, params *DownloadPXEArtifactParams, writer io.Writer) (*DownloadPXEArtifactOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "DownloadPXEArtifact",
+		Method:             "GET",
+		PathPattern:        "/pxe-artifacts",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &DownloadPXEArtifactReader{formats: a.formats, writer: writer},
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DownloadPXEArtifactOK), nil
 
 }
 

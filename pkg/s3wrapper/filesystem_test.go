@@ -73,7 +73,7 @@ var _ = Describe("s3filesystem", func() {
 		filePath, _ := createFileObject(client.basedir, "foo", now)
 		fileReader, err := os.Open(filePath)
 		Expect(err).Should(BeNil())
-		err = client.UploadStream(ctx, fileReader, objKey)
+		err = client.UploadStream(ctx, fileReader, objKey, false)
 		Expect(err).Should(BeNil())
 		fileReader.Close()
 

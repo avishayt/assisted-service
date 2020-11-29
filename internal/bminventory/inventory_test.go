@@ -3225,7 +3225,7 @@ var _ = Describe("Upload and Download logs test", func() {
 			HTTPRequest: request,
 		}
 		fileName := bm.getLogsFullName(clusterID.String(), host.ID.String())
-		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName).Return(errors.Errorf("Dummy")).Times(1)
+		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName, false).Return(errors.Errorf("Dummy")).Times(1)
 		verifyApiError(bm.UploadHostLogs(ctx, params), http.StatusInternalServerError)
 	})
 	It("Upload Hosts logs Happy flow", func() {
@@ -3239,7 +3239,7 @@ var _ = Describe("Upload and Download logs test", func() {
 			HTTPRequest: request,
 		}
 		fileName := bm.getLogsFullName(clusterID.String(), host.ID.String())
-		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName).Return(nil).Times(1)
+		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName, false).Return(nil).Times(1)
 		mockHostApi.EXPECT().SetUploadLogsAt(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		reply := bm.UploadHostLogs(ctx, params)
 		Expect(reply).Should(BeAssignableToTypeOf(installer.NewUploadHostLogsNoContent()))
@@ -3252,7 +3252,7 @@ var _ = Describe("Upload and Download logs test", func() {
 			LogsType:    string(models.LogsTypeController),
 		}
 		fileName := bm.getLogsFullName(clusterID.String(), string(models.LogsTypeController))
-		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName).Return(nil).Times(1)
+		mockS3Client.EXPECT().UploadStream(gomock.Any(), gomock.Any(), fileName, false).Return(nil).Times(1)
 		mockClusterAPI.EXPECT().SetUploadControllerLogsAt(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		reply := bm.UploadLogs(ctx, params)
 		Expect(reply).Should(BeAssignableToTypeOf(installer.NewUploadLogsNoContent()))

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -112,6 +113,25 @@ var _ = Describe("s3client", func() {
 		called := false
 		client.handleObject(ctx, log, &obj, now, deleteTime, func(ctx context.Context, log logrus.FieldLogger, objectName string) { called = true })
 		Expect(called).To(Equal(false))
+	})
+	It("download_pxe_artifact", func() {
+		objectName := strings.TrimSuffix(BaseObjectName, ".iso") + ".vmlinuz"
+		mockAPI.EXPECT().HeadObject(&s3.HeadObjectInput{Bucket: &bucket, Key: aws.String(objectName)}).
+			Return(&s3.HeadObjectOutput{ETag: aws.String("abcdefg"), ContentLength: aws.Int64(100)}, nil)
+		mockAPI.EXPECT().GetObject(&s3.GetObjectInput{Bucket: &bucket, Key: aws.String(objectName)}).
+			Return(&s3.GetObjectOutput{Body: ioutil.NopCloser(bytes.NewReader([]byte("Hi!")))}, nil)
+		_, name, length, err := client.DownloadPXEArtifact(ctx, "vmlinuz")
+		Expect(name).To(Equal(objectName))
+		Expect(length).To(Equal(int64(100)))
+		Expect(err).To(BeNil())
+	})
+	It("get_s3_pxe_artifact_url", func() {
+		client1 := &S3Client{cfg: &Config{S3Bucket: "test", Region: "us-east-1"}}
+		url := client1.GetS3PXEArtifactURL("rootfs.img")
+		Expect(url).To(Equal(fmt.Sprintf("https://test.s3.us-east-1.amazonaws.com/%s", strings.TrimSuffix(BaseObjectName, ".iso")+".rootfs.img")))
+		client2 := &S3Client{cfg: &Config{S3Bucket: "test", S3EndpointURL: "http://foo.com:1234"}}
+		url = client2.GetS3PXEArtifactURL("initrd.img")
+		Expect(url).To(Equal(fmt.Sprintf("http://foo.com:1234/%s", strings.TrimSuffix(BaseObjectName, ".iso")+".initrd.img")))
 	})
 	Context("upload iso", func() {
 		success := func(hexBytes []byte, baseISOSize, areaOffset, areaLength int64, cached bool) {

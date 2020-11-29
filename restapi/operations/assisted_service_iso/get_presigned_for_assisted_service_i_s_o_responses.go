@@ -232,3 +232,47 @@ func (o *GetPresignedForAssistedServiceISOInternalServerError) WriteResponse(rw 
 		}
 	}
 }
+
+// GetPresignedForAssistedServiceISOServiceUnavailableCode is the HTTP code returned for type GetPresignedForAssistedServiceISOServiceUnavailable
+const GetPresignedForAssistedServiceISOServiceUnavailableCode int = 503
+
+/*GetPresignedForAssistedServiceISOServiceUnavailable Unavailable.
+
+swagger:response getPresignedForAssistedServiceISOServiceUnavailable
+*/
+type GetPresignedForAssistedServiceISOServiceUnavailable struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.Error `json:"body,omitempty"`
+}
+
+// NewGetPresignedForAssistedServiceISOServiceUnavailable creates GetPresignedForAssistedServiceISOServiceUnavailable with default headers values
+func NewGetPresignedForAssistedServiceISOServiceUnavailable() *GetPresignedForAssistedServiceISOServiceUnavailable {
+
+	return &GetPresignedForAssistedServiceISOServiceUnavailable{}
+}
+
+// WithPayload adds the payload to the get presigned for assisted service i s o service unavailable response
+func (o *GetPresignedForAssistedServiceISOServiceUnavailable) WithPayload(payload *models.Error) *GetPresignedForAssistedServiceISOServiceUnavailable {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the get presigned for assisted service i s o service unavailable response
+func (o *GetPresignedForAssistedServiceISOServiceUnavailable) SetPayload(payload *models.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *GetPresignedForAssistedServiceISOServiceUnavailable) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(503)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}

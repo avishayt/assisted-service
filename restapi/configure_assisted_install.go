@@ -86,6 +86,9 @@ type InstallerAPI interface {
 	/* DownloadHostLogs Download host logs. */
 	DownloadHostLogs(ctx context.Context, params installer.DownloadHostLogsParams) middleware.Responder
 
+	/* DownloadPXEArtifact Downloads PXE artifact. */
+	DownloadPXEArtifact(ctx context.Context, params installer.DownloadPXEArtifactParams) middleware.Responder
+
 	/* EnableHost Enables a host for inclusion in the cluster. */
 	EnableHost(ctx context.Context, params installer.EnableHostParams) middleware.Responder
 
@@ -371,6 +374,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
 		return c.AssistedServiceIsoAPI.DownloadISO(ctx, params)
+	})
+	api.InstallerDownloadPXEArtifactHandler = installer.DownloadPXEArtifactHandlerFunc(func(params installer.DownloadPXEArtifactParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.DownloadPXEArtifact(ctx, params)
 	})
 	api.InstallerEnableHostHandler = installer.EnableHostHandlerFunc(func(params installer.EnableHostParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()

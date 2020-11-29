@@ -189,6 +189,20 @@ func (mr *MockInstallerAPIMockRecorder) DownloadHostLogs(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadHostLogs", reflect.TypeOf((*MockInstallerAPI)(nil).DownloadHostLogs), arg0, arg1)
 }
 
+// DownloadPXEArtifact mocks base method
+func (m *MockInstallerAPI) DownloadPXEArtifact(arg0 context.Context, arg1 installer.DownloadPXEArtifactParams) middleware.Responder {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownloadPXEArtifact", arg0, arg1)
+	ret0, _ := ret[0].(middleware.Responder)
+	return ret0
+}
+
+// DownloadPXEArtifact indicates an expected call of DownloadPXEArtifact
+func (mr *MockInstallerAPIMockRecorder) DownloadPXEArtifact(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadPXEArtifact", reflect.TypeOf((*MockInstallerAPI)(nil).DownloadPXEArtifact), arg0, arg1)
+}
+
 // EnableHost mocks base method
 func (m *MockInstallerAPI) EnableHost(arg0 context.Context, arg1 installer.EnableHostParams) middleware.Responder {
 	m.ctrl.T.Helper()

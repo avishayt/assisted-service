@@ -34,15 +34,13 @@ const awsEndpointSuffix = ".amazonaws.com"
 // BaseObjectName?
 const BaseObjectName = "livecd-46.82.202009222340-0.iso"
 
-var ISOFileTypes []string = []string{"initrd.img", "rootfs.img", "vmlinuz"}
-
 //go:generate mockgen -source=client.go -package=s3wrapper -destination=mock_s3wrapper.go
 //go:generate mockgen -package s3wrapper -destination mock_s3iface.go github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 type API interface {
 	IsAwsS3() bool
 	CreateBucket() error
 	Upload(ctx context.Context, data []byte, objectName string) error
-	UploadStream(ctx context.Context, reader io.Reader, objectName string) error
+	UploadStream(ctx context.Context, reader io.Reader, objectName string, public bool) error
 	UploadFile(ctx context.Context, filePath, objectName string) error
 	UploadISO(ctx context.Context, ignitionConfig, objectPrefix string) error
 	Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error)
@@ -54,6 +52,8 @@ type API interface {
 	ExpireObjects(ctx context.Context, prefix string, deleteTime time.Duration, callback func(ctx context.Context, log logrus.FieldLogger, objectName string))
 	ListObjectsByPrefix(ctx context.Context, prefix string) ([]string, error)
 	ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error
+	DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error)
+	GetS3PXEArtifactURL(fileType string) string
 }
 
 var _ API = &S3Client{}
@@ -141,14 +141,19 @@ func (c *S3Client) CreateBucket() error {
 	return nil
 }
 
-func (c *S3Client) UploadStream(ctx context.Context, reader io.Reader, objectName string) error {
+func (c *S3Client) UploadStream(ctx context.Context, reader io.Reader, objectName string, public bool) error {
 	log := logutil.FromContext(ctx, c.log)
 	uploader := s3manager.NewUploader(c.session)
-	_, err := uploader.Upload(&s3manager.UploadInput{
+	input := s3manager.UploadInput{
 		Bucket: aws.String(c.cfg.S3Bucket),
 		Key:    aws.String(objectName),
 		Body:   reader,
-	})
+	}
+	if public {
+		input.ACL = aws.String(s3.BucketCannedACLPublicRead)
+	}
+
+	_, err := uploader.Upload(&input)
 	if err != nil {
 		err = errors.Wrapf(err, "Unable to upload %s to bucket %s", objectName, c.cfg.S3Bucket)
 		log.Error(err)
@@ -168,7 +173,7 @@ func (c *S3Client) UploadFile(ctx context.Context, filePath, objectName string) 
 	}
 
 	reader := bufio.NewReader(file)
-	return c.UploadStream(ctx, reader, objectName)
+	return c.UploadStream(ctx, reader, objectName, false)
 }
 
 func (c *S3Client) UploadISO(ctx context.Context, ignitionConfig, objectPrefix string) error {
@@ -178,7 +183,7 @@ func (c *S3Client) UploadISO(ctx context.Context, ignitionConfig, objectPrefix s
 
 func (c *S3Client) Upload(ctx context.Context, data []byte, objectName string) error {
 	reader := bytes.NewReader(data)
-	return c.UploadStream(ctx, reader, objectName)
+	return c.UploadStream(ctx, reader, objectName, false)
 }
 
 func (c *S3Client) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error) {
@@ -394,4 +399,19 @@ func (c *S3Client) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath
 		return err
 	}
 	return nil
+}
+
+func (c *S3Client) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	reader, contentLength, err := c.Download(ctx, objectName)
+	return reader, objectName, contentLength, err
+}
+
+func (c *S3Client) GetS3PXEArtifactURL(fileType string) string {
+	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+	if c.cfg.S3EndpointURL == "" {
+		return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", c.cfg.S3Bucket, c.cfg.Region, objectName)
+	} else {
+		return fmt.Sprintf("%s/%s", c.cfg.S3EndpointURL, objectName)
+	}
 }

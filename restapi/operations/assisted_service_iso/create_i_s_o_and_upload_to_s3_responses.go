@@ -212,3 +212,47 @@ func (o *CreateISOAndUploadToS3InternalServerError) WriteResponse(rw http.Respon
 		}
 	}
 }
+
+// CreateISOAndUploadToS3ServiceUnavailableCode is the HTTP code returned for type CreateISOAndUploadToS3ServiceUnavailable
+const CreateISOAndUploadToS3ServiceUnavailableCode int = 503
+
+/*CreateISOAndUploadToS3ServiceUnavailable Unavailable.
+
+swagger:response createISOAndUploadToS3ServiceUnavailable
+*/
+type CreateISOAndUploadToS3ServiceUnavailable struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.Error `json:"body,omitempty"`
+}
+
+// NewCreateISOAndUploadToS3ServiceUnavailable creates CreateISOAndUploadToS3ServiceUnavailable with default headers values
+func NewCreateISOAndUploadToS3ServiceUnavailable() *CreateISOAndUploadToS3ServiceUnavailable {
+
+	return &CreateISOAndUploadToS3ServiceUnavailable{}
+}
+
+// WithPayload adds the payload to the create i s o and upload to s3 service unavailable response
+func (o *CreateISOAndUploadToS3ServiceUnavailable) WithPayload(payload *models.Error) *CreateISOAndUploadToS3ServiceUnavailable {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the create i s o and upload to s3 service unavailable response
+func (o *CreateISOAndUploadToS3ServiceUnavailable) SetPayload(payload *models.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *CreateISOAndUploadToS3ServiceUnavailable) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(503)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}

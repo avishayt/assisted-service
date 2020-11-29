@@ -53,6 +53,12 @@ func (o *CreateISOAndUploadToS3Reader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
+	case 503:
+		result := NewCreateISOAndUploadToS3ServiceUnavailable()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 
 	default:
 		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
@@ -201,6 +207,39 @@ func (o *CreateISOAndUploadToS3InternalServerError) GetPayload() *models.Error {
 }
 
 func (o *CreateISOAndUploadToS3InternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateISOAndUploadToS3ServiceUnavailable creates a CreateISOAndUploadToS3ServiceUnavailable with default headers values
+func NewCreateISOAndUploadToS3ServiceUnavailable() *CreateISOAndUploadToS3ServiceUnavailable {
+	return &CreateISOAndUploadToS3ServiceUnavailable{}
+}
+
+/*CreateISOAndUploadToS3ServiceUnavailable handles this case with default header values.
+
+Unavailable.
+*/
+type CreateISOAndUploadToS3ServiceUnavailable struct {
+	Payload *models.Error
+}
+
+func (o *CreateISOAndUploadToS3ServiceUnavailable) Error() string {
+	return fmt.Sprintf("[POST /assisted-service-iso][%d] createISOAndUploadToS3ServiceUnavailable  %+v", 503, o.Payload)
+}
+
+func (o *CreateISOAndUploadToS3ServiceUnavailable) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *CreateISOAndUploadToS3ServiceUnavailable) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Error)
 
