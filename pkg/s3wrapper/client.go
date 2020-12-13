@@ -76,6 +76,7 @@ type Config struct {
 	S3EndpointURL      string `envconfig:"S3_ENDPOINT_URL"`
 	Region             string `envconfig:"S3_REGION"`
 	S3Bucket           string `envconfig:"S3_BUCKET"`
+	S3PublicBucket     string `envconfig:"S3_BUCKET_PUBLIC"`
 	AwsAccessKeyID     string `envconfig:"AWS_ACCESS_KEY_ID"`
 	AwsSecretAccessKey string `envconfig:"AWS_SECRET_ACCESS_KEY"`
 	IsPublic           bool   `default:"false"`
@@ -104,7 +105,7 @@ func NewS3Client(cfg *Config, logger logrus.FieldLogger) *S3Client {
 		return nil
 	}
 
-	isoUploader := NewISOUploader(logger, client, cfg.S3Bucket)
+	isoUploader := NewISOUploader(logger, client, cfg.S3Bucket, cfg.S3PublicBucket)
 	return &S3Client{client: client, session: awsSession, cfg: cfg, log: logger, isoUploader: isoUploader}
 }
 

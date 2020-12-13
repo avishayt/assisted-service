@@ -48,10 +48,10 @@ func uploadBootFilesWithLeader(ctx context.Context, api API, log logrus.FieldLog
 			return err
 		}
 		baseISOObjectName = strings.TrimSpace(volumeID) + ".iso"
-		haveISOFile = false
+		haveISOFile = true
 	} else {
 		baseISOObjectName = RHCOSBaseISOObjectName
-		haveISOFile = true
+		haveISOFile = false
 	}
 
 	for _, fileType := range fileTypes {
@@ -93,7 +93,7 @@ func uploadBootFilesWithLeader(ctx context.Context, api API, log logrus.FieldLog
 		} else {
 			err = uploadLeader.RunWithLeader(ctx, func() error {
 				log.Infof("Starting upload of file %s", objectName)
-				return uploadFileFromISO(ctx, isoFilePath, objectName, fileType, api)
+				return uploadFileFromISO(ctx, isoFilePath, fileType, objectName, api)
 			})
 		}
 		if err != nil {
