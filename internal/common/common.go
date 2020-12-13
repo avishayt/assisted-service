@@ -95,7 +95,7 @@ func TarAwsFiles(ctx context.Context, tarName string, files, tarredFilenames []s
 			pr.Close()
 		}()
 		// Upload the file, body is `io.Reader` from pipe
-		uploadError := client.UploadStream(ctx, pr, tarName, false)
+		uploadError := client.UploadStream(ctx, pr, tarName)
 		if uploadError != nil && err == nil {
 			err = errors.Wrapf(uploadError, "Failed to upload archive %s", tarName)
 			log.Error(err)

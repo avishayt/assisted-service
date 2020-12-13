@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/assisted-service/pkg/leader"
 	logutil "github.com/openshift/assisted-service/pkg/log"
 
 	"github.com/moby/moby/pkg/ioutils"
@@ -277,22 +278,16 @@ func (f *FSClient) ListObjectsByPrefix(ctx context.Context, prefix string) ([]st
 	return matches, nil
 }
 
-func (f *FSClient) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error {
-	log := logutil.FromContext(ctx, f.log)
-	err := ExtractFilesFromISOAndUploadStream(ctx, log, isoFilePath, isoObjectName, f)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
+func (f *FSClient) UploadBootFilesWithLeader(ctx context.Context, uploadLeader leader.ElectorInterface, isoFilePath string) error {
+	return uploadBootFilesWithLeader(ctx, f, logutil.FromContext(ctx, f.log), uploadLeader, isoFilePath)
 }
 
-func (f *FSClient) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
-	objectName := strings.TrimSuffix(BaseObjectName, ".iso") + "." + fileType
+func (f *FSClient) DownloadBootFile(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+	objectName := strings.TrimSuffix(baseISOObjectName, ".iso") + "." + fileType
 	reader, contentLength, err := f.Download(ctx, objectName)
 	return reader, objectName, contentLength, err
 }
 
-func (f *FSClient) GetS3PXEArtifactURL(fileType string) string {
+func (f *FSClient) GetS3BootFileURL(fileType string) string {
 	return ""
 }

@@ -2403,13 +2403,13 @@ paths:
           schema:
             $ref: '#/definitions/error'
 
-  /pxe-artifacts:
+  /boot-files:
     get:
       tags:
         - installer
       security: []
-      summary: Downloads PXE artifact.
-      operationId: DownloadPXEArtifact
+      summary: Downloads files used for booting servers.
+      operationId: DownloadBootFiles
       produces:
         - application/octet-stream
       parameters:

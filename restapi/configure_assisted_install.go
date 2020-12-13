@@ -68,6 +68,9 @@ type InstallerAPI interface {
 	/* DisableHost Disables a host for inclusion in the cluster. */
 	DisableHost(ctx context.Context, params installer.DisableHostParams) middleware.Responder
 
+	/* DownloadBootFiles Downloads files used for booting servers. */
+	DownloadBootFiles(ctx context.Context, params installer.DownloadBootFilesParams) middleware.Responder
+
 	/* DownloadClusterFiles Downloads files relating to the installed/installing cluster. */
 	DownloadClusterFiles(ctx context.Context, params installer.DownloadClusterFilesParams) middleware.Responder
 
@@ -334,6 +337,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.DisableHost(ctx, params)
+	})
+	api.InstallerDownloadBootFilesHandler = installer.DownloadBootFilesHandlerFunc(func(params installer.DownloadBootFilesParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.DownloadBootFiles(ctx, params)
 	})
 	api.InstallerDownloadClusterFilesHandler = installer.DownloadClusterFilesHandlerFunc(func(params installer.DownloadClusterFilesParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()

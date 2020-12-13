@@ -3390,7 +3390,7 @@ func (b *bareMetalInventory) uploadLogs(ctx context.Context, params installer.Up
 	}
 	fileName := b.getLogsFullName(params.ClusterID.String(), params.LogsType)
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName, false)
+	err = b.objectHandler.UploadStream(ctx, params.Upfile, fileName)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3", fileName)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3417,7 +3417,7 @@ func (b *bareMetalInventory) uploadHostLogs(ctx context.Context, clusterId strin
 	fileName := b.getLogsFullName(clusterId, hostId)
 
 	log.Debugf("Start upload log file %s to bucket %s", fileName, b.S3Bucket)
-	err = b.objectHandler.UploadStream(ctx, upFile, fileName, false)
+	err = b.objectHandler.UploadStream(ctx, upFile, fileName)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload %s to s3 for host %s", fileName, hostId)
 		return common.NewApiError(http.StatusInternalServerError, err)
@@ -3880,20 +3880,20 @@ func (b *bareMetalInventory) setPullSecretFromOCP(cluster *common.Cluster, log l
 	return nil
 }
 
-func (b *bareMetalInventory) DownloadPXEArtifact(ctx context.Context, params installer.DownloadPXEArtifactParams) middleware.Responder {
+func (b *bareMetalInventory) DownloadBootFiles(ctx context.Context, params installer.DownloadBootFilesParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 
 	// If we're working with AWS, redirect to download directly from there
 	if b.publicObjectHandler.IsAwsS3() {
-		return installer.NewDownloadPXEArtifactTemporaryRedirect().WithLocation(b.publicObjectHandler.GetS3PXEArtifactURL(params.FileType))
+		return installer.NewDownloadBootFilesTemporaryRedirect().WithLocation(b.publicObjectHandler.GetS3BootFileURL(params.FileType))
 	}
 
-	reader, objectName, contentLength, err := b.publicObjectHandler.DownloadPXEArtifact(ctx, params.FileType)
+	reader, objectName, contentLength, err := b.publicObjectHandler.DownloadBootFile(ctx, params.FileType)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to get %s PXE artifact", params.FileType)
 		return common.GenerateErrorResponder(err)
 	}
 
-	return filemiddleware.NewResponder(installer.NewDownloadPXEArtifactOK().WithPayload(reader),
+	return filemiddleware.NewResponder(installer.NewDownloadBootFilesOK().WithPayload(reader),
 		objectName, contentLength)
 }

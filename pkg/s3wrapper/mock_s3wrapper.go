@@ -7,6 +7,7 @@ package s3wrapper
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	leader "github.com/openshift/assisted-service/pkg/leader"
 	logrus "github.com/sirupsen/logrus"
 	io "io"
 	reflect "reflect"
@@ -79,17 +80,17 @@ func (mr *MockAPIMockRecorder) Upload(ctx, data, objectName interface{}) *gomock
 }
 
 // UploadStream mocks base method
-func (m *MockAPI) UploadStream(ctx context.Context, reader io.Reader, objectName string, public bool) error {
+func (m *MockAPI) UploadStream(ctx context.Context, reader io.Reader, objectName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadStream", ctx, reader, objectName, public)
+	ret := m.ctrl.Call(m, "UploadStream", ctx, reader, objectName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UploadStream indicates an expected call of UploadStream
-func (mr *MockAPIMockRecorder) UploadStream(ctx, reader, objectName, public interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) UploadStream(ctx, reader, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadStream", reflect.TypeOf((*MockAPI)(nil).UploadStream), ctx, reader, objectName, public)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadStream", reflect.TypeOf((*MockAPI)(nil).UploadStream), ctx, reader, objectName)
 }
 
 // UploadFile mocks base method
@@ -237,24 +238,24 @@ func (mr *MockAPIMockRecorder) ListObjectsByPrefix(ctx, prefix interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectsByPrefix", reflect.TypeOf((*MockAPI)(nil).ListObjectsByPrefix), ctx, prefix)
 }
 
-// ExtractFilesFromISOAndUpload mocks base method
-func (m *MockAPI) ExtractFilesFromISOAndUpload(ctx context.Context, isoFilePath, isoObjectName string) error {
+// UploadBootFilesWithLeader mocks base method
+func (m *MockAPI) UploadBootFilesWithLeader(ctx context.Context, uploadLeader leader.ElectorInterface, isoFilePath string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExtractFilesFromISOAndUpload", ctx, isoFilePath, isoObjectName)
+	ret := m.ctrl.Call(m, "UploadBootFilesWithLeader", ctx, uploadLeader, isoFilePath)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ExtractFilesFromISOAndUpload indicates an expected call of ExtractFilesFromISOAndUpload
-func (mr *MockAPIMockRecorder) ExtractFilesFromISOAndUpload(ctx, isoFilePath, isoObjectName interface{}) *gomock.Call {
+// UploadBootFilesWithLeader indicates an expected call of UploadBootFilesWithLeader
+func (mr *MockAPIMockRecorder) UploadBootFilesWithLeader(ctx, uploadLeader, isoFilePath interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractFilesFromISOAndUpload", reflect.TypeOf((*MockAPI)(nil).ExtractFilesFromISOAndUpload), ctx, isoFilePath, isoObjectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBootFilesWithLeader", reflect.TypeOf((*MockAPI)(nil).UploadBootFilesWithLeader), ctx, uploadLeader, isoFilePath)
 }
 
-// DownloadPXEArtifact mocks base method
-func (m *MockAPI) DownloadPXEArtifact(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
+// DownloadBootFile mocks base method
+func (m *MockAPI) DownloadBootFile(ctx context.Context, fileType string) (io.ReadCloser, string, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DownloadPXEArtifact", ctx, fileType)
+	ret := m.ctrl.Call(m, "DownloadBootFile", ctx, fileType)
 	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(int64)
@@ -262,22 +263,22 @@ func (m *MockAPI) DownloadPXEArtifact(ctx context.Context, fileType string) (io.
 	return ret0, ret1, ret2, ret3
 }
 
-// DownloadPXEArtifact indicates an expected call of DownloadPXEArtifact
-func (mr *MockAPIMockRecorder) DownloadPXEArtifact(ctx, fileType interface{}) *gomock.Call {
+// DownloadBootFile indicates an expected call of DownloadBootFile
+func (mr *MockAPIMockRecorder) DownloadBootFile(ctx, fileType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadPXEArtifact", reflect.TypeOf((*MockAPI)(nil).DownloadPXEArtifact), ctx, fileType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadBootFile", reflect.TypeOf((*MockAPI)(nil).DownloadBootFile), ctx, fileType)
 }
 
-// GetS3PXEArtifactURL mocks base method
-func (m *MockAPI) GetS3PXEArtifactURL(fileType string) string {
+// GetS3BootFileURL mocks base method
+func (m *MockAPI) GetS3BootFileURL(fileType string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetS3PXEArtifactURL", fileType)
+	ret := m.ctrl.Call(m, "GetS3BootFileURL", fileType)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetS3PXEArtifactURL indicates an expected call of GetS3PXEArtifactURL
-func (mr *MockAPIMockRecorder) GetS3PXEArtifactURL(fileType interface{}) *gomock.Call {
+// GetS3BootFileURL indicates an expected call of GetS3BootFileURL
+func (mr *MockAPIMockRecorder) GetS3BootFileURL(fileType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetS3PXEArtifactURL", reflect.TypeOf((*MockAPI)(nil).GetS3PXEArtifactURL), fileType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetS3BootFileURL", reflect.TypeOf((*MockAPI)(nil).GetS3BootFileURL), fileType)
 }

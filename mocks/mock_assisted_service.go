@@ -105,6 +105,20 @@ func (mr *MockInstallerAPIMockRecorder) DisableHost(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableHost", reflect.TypeOf((*MockInstallerAPI)(nil).DisableHost), arg0, arg1)
 }
 
+// DownloadBootFiles mocks base method
+func (m *MockInstallerAPI) DownloadBootFiles(arg0 context.Context, arg1 installer.DownloadBootFilesParams) middleware.Responder {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownloadBootFiles", arg0, arg1)
+	ret0, _ := ret[0].(middleware.Responder)
+	return ret0
+}
+
+// DownloadBootFiles indicates an expected call of DownloadBootFiles
+func (mr *MockInstallerAPIMockRecorder) DownloadBootFiles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadBootFiles", reflect.TypeOf((*MockInstallerAPI)(nil).DownloadBootFiles), arg0, arg1)
+}
+
 // DownloadClusterFiles mocks base method
 func (m *MockInstallerAPI) DownloadClusterFiles(arg0 context.Context, arg1 installer.DownloadClusterFilesParams) middleware.Responder {
 	m.ctrl.T.Helper()

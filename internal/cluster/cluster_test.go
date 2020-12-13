@@ -1899,7 +1899,7 @@ var _ = Describe("Cluster tarred files", func() {
 	It("download failed", func() {
 		mockS3Client.EXPECT().ListObjectsByPrefix(ctx, prefix).Return(files, nil).Times(1)
 		mockS3Client.EXPECT().Download(ctx, files[0]).Return(nil, int64(0), errors.Errorf("Dummy")).Times(1)
-		mockS3Client.EXPECT().UploadStream(ctx, gomock.Any(), gomock.Any(), false).Return(nil).Times(1)
+		mockS3Client.EXPECT().UploadStream(ctx, gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		_, err := capi.CreateTarredClusterLogs(ctx, &cl, mockS3Client)
 		Expect(err).To(HaveOccurred())
 	})
@@ -1908,7 +1908,7 @@ var _ = Describe("Cluster tarred files", func() {
 		r := ioutil.NopCloser(bytes.NewReader([]byte("test")))
 		mockS3Client.EXPECT().ListObjectsByPrefix(ctx, prefix).Return(files, nil).Times(1)
 		mockS3Client.EXPECT().Download(ctx, gomock.Any()).Return(r, int64(4), nil).AnyTimes()
-		mockS3Client.EXPECT().UploadStream(ctx, gomock.Any(), tarFile, false).Return(errors.Errorf("Dummy")).Times(1)
+		mockS3Client.EXPECT().UploadStream(ctx, gomock.Any(), tarFile).Return(errors.Errorf("Dummy")).Times(1)
 		_, err := capi.CreateTarredClusterLogs(ctx, &cl, mockS3Client)
 		Expect(err).To(HaveOccurred())
 	})

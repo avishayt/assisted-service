@@ -15,18 +15,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// NewDownloadPXEArtifactParams creates a new DownloadPXEArtifactParams object
+// NewDownloadBootFilesParams creates a new DownloadBootFilesParams object
 // no default values defined in spec.
-func NewDownloadPXEArtifactParams() DownloadPXEArtifactParams {
+func NewDownloadBootFilesParams() DownloadBootFilesParams {
 
-	return DownloadPXEArtifactParams{}
+	return DownloadBootFilesParams{}
 }
 
-// DownloadPXEArtifactParams contains all the bound params for the download p x e artifact operation
+// DownloadBootFilesParams contains all the bound params for the download boot files operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters DownloadPXEArtifact
-type DownloadPXEArtifactParams struct {
+// swagger:parameters DownloadBootFiles
+type DownloadBootFilesParams struct {
 
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
@@ -41,8 +41,8 @@ type DownloadPXEArtifactParams struct {
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls.
 //
-// To ensure default values, the struct must have been initialized with NewDownloadPXEArtifactParams() beforehand.
-func (o *DownloadPXEArtifactParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+// To ensure default values, the struct must have been initialized with NewDownloadBootFilesParams() beforehand.
+func (o *DownloadBootFilesParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	o.HTTPRequest = r
@@ -61,7 +61,7 @@ func (o *DownloadPXEArtifactParams) BindRequest(r *http.Request, route *middlewa
 }
 
 // bindFileType binds and validates parameter FileType from query.
-func (o *DownloadPXEArtifactParams) bindFileType(rawData []string, hasKey bool, formats strfmt.Registry) error {
+func (o *DownloadBootFilesParams) bindFileType(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
 		return errors.Required("file_type", "query", rawData)
 	}
@@ -86,7 +86,7 @@ func (o *DownloadPXEArtifactParams) bindFileType(rawData []string, hasKey bool, 
 }
 
 // validateFileType carries on validations for parameter FileType
-func (o *DownloadPXEArtifactParams) validateFileType(formats strfmt.Registry) error {
+func (o *DownloadBootFilesParams) validateFileType(formats strfmt.Registry) error {
 
 	if err := validate.EnumCase("file_type", "query", o.FileType, []interface{}{"initrd.img", "rootfs.img", "vmlinuz"}, true); err != nil {
 		return err
