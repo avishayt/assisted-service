@@ -94,10 +94,6 @@ type Cluster struct {
 	// Json formatted string containing the user overrides for the initial ignition config
 	IgnitionConfigOverrides string `json:"ignition_config_overrides,omitempty" gorm:"type:text"`
 
-	// image info
-	// Required: true
-	ImageInfo *ImageInfo `json:"image_info" gorm:"embedded;embedded_prefix:image_"`
-
 	// The virtual IP used for cluster ingress traffic.
 	// Pattern: ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$
 	IngressVip string `json:"ingress_vip,omitempty"`
@@ -232,10 +228,6 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateImageInfo(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -489,24 +481,6 @@ func (m *Cluster) validateID(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("id", "body", "uuid", m.ID.String(), formats); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (m *Cluster) validateImageInfo(formats strfmt.Registry) error {
-
-	if err := validate.Required("image_info", "body", m.ImageInfo); err != nil {
-		return err
-	}
-
-	if m.ImageInfo != nil {
-		if err := m.ImageInfo.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("image_info")
-			}
-			return err
-		}
 	}
 
 	return nil

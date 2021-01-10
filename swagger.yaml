@@ -17,6 +17,8 @@ tags:
     description: Non-customized files used to boot hosts.
   - name: events
     description: Events related to a cluster installation.
+  - name: images
+    description: Images that run the Assisted agent for discovery.
   - name: installer
     description: General OpenShift cluster installation APIs.
   - name: managed_domains
@@ -273,109 +275,6 @@ paths:
           description: Method Not Allowed.
           schema:
             $ref: '#/definitions/error'
-        "409":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "500":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-
-  /clusters/{cluster_id}/downloads/image:
-    post:
-      tags:
-        - installer
-      description: Creates a new OpenShift per-cluster Discovery ISO.
-      operationId: GenerateClusterISO
-      parameters:
-        - in: path
-          name: cluster_id
-          description: The cluster whose ISO should be generated.
-          type: string
-          format: uuid
-          required: true
-        - in: body
-          name: image-create-params
-          description: The parameters for the generated ISO.
-          required: true
-          schema:
-            $ref: '#/definitions/image-create-params'
-      responses:
-        "201":
-          description: Success.
-          schema:
-            $ref: '#/definitions/cluster'
-        "400":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "401":
-          description: Unauthorized.
-          schema:
-            $ref: '#/definitions/infra_error'
-        "403":
-          description: Forbidden.
-          schema:
-            $ref: '#/definitions/infra_error'
-        "404":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "405":
-          description: Method Not Allowed.
-          schema:
-            $ref: '#/definitions/error'
-        "409":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "500":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-
-    get:
-      tags:
-        - installer
-      description: Downloads the OpenShift per-cluster Discovery ISO.
-      security:
-        - userAuth: [admin, read-only-admin, user]
-      operationId: DownloadClusterISO
-      produces:
-        # application/vnd.efi.iso is not supported
-        - application/octet-stream
-      parameters:
-        - in: path
-          name: cluster_id
-          description: The cluster whose ISO should be downloaded.
-          type: string
-          format: uuid
-          required: true
-      responses:
-        "200":
-          description: Success.
-          schema:
-            type: string
-            format: binary
-        "400":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "401":
-          description: Unauthorized.
-          schema:
-            $ref: '#/definitions/infra_error'
-        "403":
-          description: Forbidden.
-          schema:
-            $ref: '#/definitions/infra_error'
-        "404":
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
-        "405":
-          description: Method Not Allowed.
         "409":
           description: Error.
           schema:
@@ -2586,6 +2485,248 @@ paths:
           schema:
             $ref: '#/definitions/error'
 
+
+  /clusters/{cluster_id}/images:
+    post:
+      tags:
+        - images
+      description: Creates a new OpenShift per-cluster Discovery ISO.
+      operationId: GenerateClusterISO
+      parameters:
+        - in: path
+          name: cluster_id
+          description: The cluster to create an image for.
+          type: string
+          format: uuid
+          required: true
+        - in: body
+          name: image-create-params
+          description: The parameters for the new image.
+          required: true
+          schema:
+            $ref: '#/definitions/image-create-params'
+      responses:
+        "201":
+          description: Success.
+          schema:
+            $ref: '#/definitions/image'
+        "400":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "403":
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "404":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "409":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "500":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+            
+    get:
+      tags:
+        - images
+      security:
+        - userAuth: [admin, read-only-admin, user]
+      description: Retrieves the list of Discovery ISOs.
+      operationId: ListImages
+      parameters:
+        - in: path
+          name: cluster_id
+          description: The cluster whose images should be listed.
+          type: string
+          format: uuid
+          required: true
+      responses:
+        "200":
+          description: Success.
+          schema:
+            $ref: '#/definitions/image-list'
+        "401":
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "403":
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "404":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "500":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "503":
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
+
+  /clusters/{cluster_id}/images/{image_id}:
+    get:
+      tags:
+        - images
+      security:
+        - userAuth: [admin, read-only-admin, user]
+      description: Retrieves the Discovery ISO metadata.
+      operationId: GetImage
+      parameters:
+        - in: path
+          name: cluster_id
+          description: The cluster associated with the image metadata to be retrieved.
+          type: string
+          format: uuid
+          required: true
+        - in: path
+          name: image_id
+          description: The image whose metadata should be retrieved.
+          type: string
+          format: uuid
+          required: true
+      responses:
+        "200":
+          description: Success.
+          schema:
+            $ref: '#/definitions/image'
+        "401":
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "403":
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "404":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "500":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "503":
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
+            
+    delete:
+      tags:
+        - images
+      description: Deletes a Discovery ISO.
+      operationId: DeleteImage
+      parameters:
+        - in: path
+          name: cluster_id
+          description: The cluster associated with the image to be deleted.
+          type: string
+          format: uuid
+          required: true
+        - in: path
+          name: image_id
+          description: The image to be deleted.
+          type: string
+          format: uuid
+          required: true
+      responses:
+        "204":
+          description: Success.
+        "401":
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "403":
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "404":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "405":
+          description: Method Not Allowed.
+          schema:
+            $ref: '#/definitions/error'
+        "409":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "500":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "503":
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
+
+  /clusters/{cluster_id}/images/{image_id}/data:
+    get:
+      tags:
+        - images
+      description: Downloads the OpenShift per-cluster Discovery ISO.
+      security:
+        - userAuth: [admin, read-only-admin, user]
+      operationId: DownloadClusterISO
+      produces:
+        # application/vnd.efi.iso is not supported
+        - application/octet-stream
+      parameters:
+        - in: path
+          name: cluster_id
+          description: The cluster associated with the image to be downloaded.
+          type: string
+          format: uuid
+          required: true
+        - in: path
+          name: image_id
+          description: The image to be downloaded.
+          type: string
+          format: uuid
+          required: true
+      responses:
+        "200":
+          description: Success.
+          schema:
+            type: string
+            format: binary
+        "400":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: Unauthorized.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "403":
+          description: Forbidden.
+          schema:
+            $ref: '#/definitions/infra_error'
+        "404":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "500":
+          description: Error.
+          schema:
+            $ref: '#/definitions/error'
+        "503":
+          description: Unavailable.
+          schema:
+            $ref: '#/definitions/error'
+
   /boot-files:
     get:
       tags:
@@ -2839,6 +2980,8 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/static-ip-config'
+      discovery_overrides:
+        type: string
 
   assisted-service-iso-create-params:
     type: object
@@ -3388,7 +3531,6 @@ definitions:
       - kind
       - id
       - href
-      - image_info
       - status
       - status_info
     properties:
@@ -3430,9 +3572,6 @@ definitions:
         type: string
         format: uuid
         description: Cluster ID on OCP system.
-      image_info:
-        $ref: '#/definitions/image_info'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:image_"
       base_dns_domain:
         type: string
         description: Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.
@@ -3589,9 +3728,42 @@ definitions:
         x-go-custom-tag: gorm:"embedded;embedded_prefix:operators_"
         x-nullable: true
 
-  image_info:
+  image-list:
+    type: array
+    items:
+      $ref: '#/definitions/image'
+
+  image:
     type: object
+    required:
+      - id
+      - state
+      - created_at
+      - expires_at
     properties:
+      kind:
+        type: string
+        enum: ['Image']
+      id:
+        type: string
+        format: uuid
+        description: Unique identifier of the object.
+        x-go-custom-tag: gorm:"primary_key"
+      href:
+        type: string
+      cluster_id:
+        type: string
+        format: uuid
+        x-go-custom-tag: gorm:"primary_key;foreignkey:Cluster"
+        description: The cluster that this host is associated with.
+      name:
+        type: string
+      state:
+        type: string
+        enum:
+          - 'creating'
+          - 'ready'
+          - 'expired'
       ssh_public_key:
         type: string
         description: SSH public key for debugging the installation.
@@ -3600,9 +3772,11 @@ definitions:
         minimum: 0
       download_url:
         type: string
-      generator_version:
+      static_ips_config:
         type: string
-        description: Image generator version.
+        description: statip ips configuration string in the format expected by discovery ignition
+      discovery_overrides:
+        type: string
       created_at:
         type: string
         format: date-time
@@ -3611,9 +3785,6 @@ definitions:
         type: string
         format: date-time
         x-go-custom-tag: gorm:"type:timestamp with time zone"
-      static_ips_config:
-        type: string
-        description: statip ips configuration string in the format expected by discovery ignition
 
   free-addresses-list:
     type: array

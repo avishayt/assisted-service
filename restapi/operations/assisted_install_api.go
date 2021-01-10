@@ -22,6 +22,7 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/assisted_service_iso"
 	"github.com/openshift/assisted-service/restapi/operations/bootfiles"
 	"github.com/openshift/assisted-service/restapi/operations/events"
+	"github.com/openshift/assisted-service/restapi/operations/images"
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	"github.com/openshift/assisted-service/restapi/operations/managed_domains"
 	"github.com/openshift/assisted-service/restapi/operations/manifests"
@@ -67,6 +68,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		ManifestsDeleteClusterManifestHandler: manifests.DeleteClusterManifestHandlerFunc(func(params manifests.DeleteClusterManifestParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation manifests.DeleteClusterManifest has not yet been implemented")
 		}),
+		ImagesDeleteImageHandler: images.DeleteImageHandlerFunc(func(params images.DeleteImageParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation images.DeleteImage has not yet been implemented")
+		}),
 		InstallerDeregisterClusterHandler: installer.DeregisterClusterHandlerFunc(func(params installer.DeregisterClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DeregisterCluster has not yet been implemented")
 		}),
@@ -82,8 +86,8 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		InstallerDownloadClusterFilesHandler: installer.DownloadClusterFilesHandlerFunc(func(params installer.DownloadClusterFilesParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterFiles has not yet been implemented")
 		}),
-		InstallerDownloadClusterISOHandler: installer.DownloadClusterISOHandlerFunc(func(params installer.DownloadClusterISOParams, principal interface{}) middleware.Responder {
-			return middleware.NotImplemented("operation installer.DownloadClusterISO has not yet been implemented")
+		ImagesDownloadClusterISOHandler: images.DownloadClusterISOHandlerFunc(func(params images.DownloadClusterISOParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation images.DownloadClusterISO has not yet been implemented")
 		}),
 		InstallerDownloadClusterKubeconfigHandler: installer.DownloadClusterKubeconfigHandlerFunc(func(params installer.DownloadClusterKubeconfigParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterKubeconfig has not yet been implemented")
@@ -106,8 +110,8 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		InstallerEnableHostHandler: installer.EnableHostHandlerFunc(func(params installer.EnableHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.EnableHost has not yet been implemented")
 		}),
-		InstallerGenerateClusterISOHandler: installer.GenerateClusterISOHandlerFunc(func(params installer.GenerateClusterISOParams, principal interface{}) middleware.Responder {
-			return middleware.NotImplemented("operation installer.GenerateClusterISO has not yet been implemented")
+		ImagesGenerateClusterISOHandler: images.GenerateClusterISOHandlerFunc(func(params images.GenerateClusterISOParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation images.GenerateClusterISO has not yet been implemented")
 		}),
 		InstallerGetClusterHandler: installer.GetClusterHandlerFunc(func(params installer.GetClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetCluster has not yet been implemented")
@@ -132,6 +136,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		}),
 		InstallerGetHostRequirementsHandler: installer.GetHostRequirementsHandlerFunc(func(params installer.GetHostRequirementsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetHostRequirements has not yet been implemented")
+		}),
+		ImagesGetImageHandler: images.GetImageHandlerFunc(func(params images.GetImageParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation images.GetImage has not yet been implemented")
 		}),
 		InstallerGetNextStepsHandler: installer.GetNextStepsHandlerFunc(func(params installer.GetNextStepsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetNextSteps has not yet been implemented")
@@ -165,6 +172,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		}),
 		InstallerListHostsHandler: installer.ListHostsHandlerFunc(func(params installer.ListHostsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.ListHosts has not yet been implemented")
+		}),
+		ImagesListImagesHandler: images.ListImagesHandlerFunc(func(params images.ListImagesParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation images.ListImages has not yet been implemented")
 		}),
 		ManagedDomainsListManagedDomainsHandler: managed_domains.ListManagedDomainsHandlerFunc(func(params managed_domains.ListManagedDomainsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation managed_domains.ListManagedDomains has not yet been implemented")
@@ -292,6 +302,8 @@ type AssistedInstallAPI struct {
 	AssistedServiceIsoCreateISOAndUploadToS3Handler assisted_service_iso.CreateISOAndUploadToS3Handler
 	// ManifestsDeleteClusterManifestHandler sets the operation handler for the delete cluster manifest operation
 	ManifestsDeleteClusterManifestHandler manifests.DeleteClusterManifestHandler
+	// ImagesDeleteImageHandler sets the operation handler for the delete image operation
+	ImagesDeleteImageHandler images.DeleteImageHandler
 	// InstallerDeregisterClusterHandler sets the operation handler for the deregister cluster operation
 	InstallerDeregisterClusterHandler installer.DeregisterClusterHandler
 	// InstallerDeregisterHostHandler sets the operation handler for the deregister host operation
@@ -302,8 +314,8 @@ type AssistedInstallAPI struct {
 	BootfilesDownloadBootFilesHandler bootfiles.DownloadBootFilesHandler
 	// InstallerDownloadClusterFilesHandler sets the operation handler for the download cluster files operation
 	InstallerDownloadClusterFilesHandler installer.DownloadClusterFilesHandler
-	// InstallerDownloadClusterISOHandler sets the operation handler for the download cluster i s o operation
-	InstallerDownloadClusterISOHandler installer.DownloadClusterISOHandler
+	// ImagesDownloadClusterISOHandler sets the operation handler for the download cluster i s o operation
+	ImagesDownloadClusterISOHandler images.DownloadClusterISOHandler
 	// InstallerDownloadClusterKubeconfigHandler sets the operation handler for the download cluster kubeconfig operation
 	InstallerDownloadClusterKubeconfigHandler installer.DownloadClusterKubeconfigHandler
 	// InstallerDownloadClusterLogsHandler sets the operation handler for the download cluster logs operation
@@ -318,8 +330,8 @@ type AssistedInstallAPI struct {
 	AssistedServiceIsoDownloadISOHandler assisted_service_iso.DownloadISOHandler
 	// InstallerEnableHostHandler sets the operation handler for the enable host operation
 	InstallerEnableHostHandler installer.EnableHostHandler
-	// InstallerGenerateClusterISOHandler sets the operation handler for the generate cluster i s o operation
-	InstallerGenerateClusterISOHandler installer.GenerateClusterISOHandler
+	// ImagesGenerateClusterISOHandler sets the operation handler for the generate cluster i s o operation
+	ImagesGenerateClusterISOHandler images.GenerateClusterISOHandler
 	// InstallerGetClusterHandler sets the operation handler for the get cluster operation
 	InstallerGetClusterHandler installer.GetClusterHandler
 	// InstallerGetClusterInstallConfigHandler sets the operation handler for the get cluster install config operation
@@ -336,6 +348,8 @@ type AssistedInstallAPI struct {
 	InstallerGetHostIgnitionHandler installer.GetHostIgnitionHandler
 	// InstallerGetHostRequirementsHandler sets the operation handler for the get host requirements operation
 	InstallerGetHostRequirementsHandler installer.GetHostRequirementsHandler
+	// ImagesGetImageHandler sets the operation handler for the get image operation
+	ImagesGetImageHandler images.GetImageHandler
 	// InstallerGetNextStepsHandler sets the operation handler for the get next steps operation
 	InstallerGetNextStepsHandler installer.GetNextStepsHandler
 	// AssistedServiceIsoGetPresignedForAssistedServiceISOHandler sets the operation handler for the get presigned for assisted service i s o operation
@@ -358,6 +372,8 @@ type AssistedInstallAPI struct {
 	EventsListEventsHandler events.ListEventsHandler
 	// InstallerListHostsHandler sets the operation handler for the list hosts operation
 	InstallerListHostsHandler installer.ListHostsHandler
+	// ImagesListImagesHandler sets the operation handler for the list images operation
+	ImagesListImagesHandler images.ListImagesHandler
 	// ManagedDomainsListManagedDomainsHandler sets the operation handler for the list managed domains operation
 	ManagedDomainsListManagedDomainsHandler managed_domains.ListManagedDomainsHandler
 	// VersionsListSupportedOpenshiftVersionsHandler sets the operation handler for the list supported openshift versions operation
@@ -498,6 +514,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	if o.ManifestsDeleteClusterManifestHandler == nil {
 		unregistered = append(unregistered, "manifests.DeleteClusterManifestHandler")
 	}
+	if o.ImagesDeleteImageHandler == nil {
+		unregistered = append(unregistered, "images.DeleteImageHandler")
+	}
 	if o.InstallerDeregisterClusterHandler == nil {
 		unregistered = append(unregistered, "installer.DeregisterClusterHandler")
 	}
@@ -513,8 +532,8 @@ func (o *AssistedInstallAPI) Validate() error {
 	if o.InstallerDownloadClusterFilesHandler == nil {
 		unregistered = append(unregistered, "installer.DownloadClusterFilesHandler")
 	}
-	if o.InstallerDownloadClusterISOHandler == nil {
-		unregistered = append(unregistered, "installer.DownloadClusterISOHandler")
+	if o.ImagesDownloadClusterISOHandler == nil {
+		unregistered = append(unregistered, "images.DownloadClusterISOHandler")
 	}
 	if o.InstallerDownloadClusterKubeconfigHandler == nil {
 		unregistered = append(unregistered, "installer.DownloadClusterKubeconfigHandler")
@@ -537,8 +556,8 @@ func (o *AssistedInstallAPI) Validate() error {
 	if o.InstallerEnableHostHandler == nil {
 		unregistered = append(unregistered, "installer.EnableHostHandler")
 	}
-	if o.InstallerGenerateClusterISOHandler == nil {
-		unregistered = append(unregistered, "installer.GenerateClusterISOHandler")
+	if o.ImagesGenerateClusterISOHandler == nil {
+		unregistered = append(unregistered, "images.GenerateClusterISOHandler")
 	}
 	if o.InstallerGetClusterHandler == nil {
 		unregistered = append(unregistered, "installer.GetClusterHandler")
@@ -563,6 +582,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.InstallerGetHostRequirementsHandler == nil {
 		unregistered = append(unregistered, "installer.GetHostRequirementsHandler")
+	}
+	if o.ImagesGetImageHandler == nil {
+		unregistered = append(unregistered, "images.GetImageHandler")
 	}
 	if o.InstallerGetNextStepsHandler == nil {
 		unregistered = append(unregistered, "installer.GetNextStepsHandler")
@@ -596,6 +618,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.InstallerListHostsHandler == nil {
 		unregistered = append(unregistered, "installer.ListHostsHandler")
+	}
+	if o.ImagesListImagesHandler == nil {
+		unregistered = append(unregistered, "images.ListImagesHandler")
 	}
 	if o.ManagedDomainsListManagedDomainsHandler == nil {
 		unregistered = append(unregistered, "managed_domains.ListManagedDomainsHandler")
@@ -779,6 +804,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
+	o.handlers["DELETE"]["/clusters/{cluster_id}/images/{image_id}"] = images.NewDeleteImage(o.context, o.ImagesDeleteImageHandler)
+	if o.handlers["DELETE"] == nil {
+		o.handlers["DELETE"] = make(map[string]http.Handler)
+	}
 	o.handlers["DELETE"]["/clusters/{cluster_id}"] = installer.NewDeregisterCluster(o.context, o.InstallerDeregisterClusterHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
@@ -799,7 +828,7 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/clusters/{cluster_id}/downloads/image"] = installer.NewDownloadClusterISO(o.context, o.InstallerDownloadClusterISOHandler)
+	o.handlers["GET"]["/clusters/{cluster_id}/images/{image_id}/data"] = images.NewDownloadClusterISO(o.context, o.ImagesDownloadClusterISOHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
@@ -831,7 +860,7 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
-	o.handlers["POST"]["/clusters/{cluster_id}/downloads/image"] = installer.NewGenerateClusterISO(o.context, o.InstallerGenerateClusterISOHandler)
+	o.handlers["POST"]["/clusters/{cluster_id}/images"] = images.NewGenerateClusterISO(o.context, o.ImagesGenerateClusterISOHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
@@ -864,6 +893,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/host_requirements"] = installer.NewGetHostRequirements(o.context, o.InstallerGetHostRequirementsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/clusters/{cluster_id}/images/{image_id}"] = images.NewGetImage(o.context, o.ImagesGetImageHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
@@ -908,6 +941,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/clusters/{cluster_id}/hosts"] = installer.NewListHosts(o.context, o.InstallerListHostsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/clusters/{cluster_id}/images"] = images.NewListImages(o.context, o.ImagesListImagesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

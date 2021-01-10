@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/assisted_service_iso"
 	"github.com/openshift/assisted-service/restapi/operations/bootfiles"
 	"github.com/openshift/assisted-service/restapi/operations/events"
+	"github.com/openshift/assisted-service/restapi/operations/images"
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	"github.com/openshift/assisted-service/restapi/operations/managed_domains"
 	"github.com/openshift/assisted-service/restapi/operations/manifests"
@@ -58,6 +59,26 @@ type EventsAPI interface {
 	ListEvents(ctx context.Context, params events.ListEventsParams) middleware.Responder
 }
 
+//go:generate mockery -name ImagesAPI -inpkg
+
+/* ImagesAPI  */
+type ImagesAPI interface {
+	/* DeleteImage Deletes a Discovery ISO. */
+	DeleteImage(ctx context.Context, params images.DeleteImageParams) middleware.Responder
+
+	/* DownloadClusterISO Downloads the OpenShift per-cluster Discovery ISO. */
+	DownloadClusterISO(ctx context.Context, params images.DownloadClusterISOParams) middleware.Responder
+
+	/* GenerateClusterISO Creates a new OpenShift per-cluster Discovery ISO. */
+	GenerateClusterISO(ctx context.Context, params images.GenerateClusterISOParams) middleware.Responder
+
+	/* GetImage Retrieves the Discovery ISO metadata. */
+	GetImage(ctx context.Context, params images.GetImageParams) middleware.Responder
+
+	/* ListImages Retrieves the list of Discovery ISOs. */
+	ListImages(ctx context.Context, params images.ListImagesParams) middleware.Responder
+}
+
 //go:generate mockery -name InstallerAPI -inpkg
 
 /* InstallerAPI  */
@@ -80,9 +101,6 @@ type InstallerAPI interface {
 	/* DownloadClusterFiles Downloads files relating to the installed/installing cluster. */
 	DownloadClusterFiles(ctx context.Context, params installer.DownloadClusterFilesParams) middleware.Responder
 
-	/* DownloadClusterISO Downloads the OpenShift per-cluster Discovery ISO. */
-	DownloadClusterISO(ctx context.Context, params installer.DownloadClusterISOParams) middleware.Responder
-
 	/* DownloadClusterKubeconfig Downloads the kubeconfig file for this cluster. */
 	DownloadClusterKubeconfig(ctx context.Context, params installer.DownloadClusterKubeconfigParams) middleware.Responder
 
@@ -97,9 +115,6 @@ type InstallerAPI interface {
 
 	/* EnableHost Enables a host for inclusion in the cluster. */
 	EnableHost(ctx context.Context, params installer.EnableHostParams) middleware.Responder
-
-	/* GenerateClusterISO Creates a new OpenShift per-cluster Discovery ISO. */
-	GenerateClusterISO(ctx context.Context, params installer.GenerateClusterISOParams) middleware.Responder
 
 	/* GetCluster Retrieves the details of the OpenShift cluster. */
 	GetCluster(ctx context.Context, params installer.GetClusterParams) middleware.Responder
@@ -236,6 +251,7 @@ type Config struct {
 	AssistedServiceIsoAPI
 	BootfilesAPI
 	EventsAPI
+	ImagesAPI
 	InstallerAPI
 	ManagedDomainsAPI
 	ManifestsAPI
@@ -336,6 +352,11 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx = storeAuth(ctx, principal)
 		return c.ManifestsAPI.DeleteClusterManifest(ctx, params)
 	})
+	api.ImagesDeleteImageHandler = images.DeleteImageHandlerFunc(func(params images.DeleteImageParams, principal interface{}) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		ctx = storeAuth(ctx, principal)
+		return c.ImagesAPI.DeleteImage(ctx, params)
+	})
 	api.InstallerDeregisterClusterHandler = installer.DeregisterClusterHandlerFunc(func(params installer.DeregisterClusterParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
@@ -360,10 +381,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.DownloadClusterFiles(ctx, params)
 	})
-	api.InstallerDownloadClusterISOHandler = installer.DownloadClusterISOHandlerFunc(func(params installer.DownloadClusterISOParams, principal interface{}) middleware.Responder {
+	api.ImagesDownloadClusterISOHandler = images.DownloadClusterISOHandlerFunc(func(params images.DownloadClusterISOParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
-		return c.InstallerAPI.DownloadClusterISO(ctx, params)
+		return c.ImagesAPI.DownloadClusterISO(ctx, params)
 	})
 	api.InstallerDownloadClusterKubeconfigHandler = installer.DownloadClusterKubeconfigHandlerFunc(func(params installer.DownloadClusterKubeconfigParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
@@ -400,10 +421,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.EnableHost(ctx, params)
 	})
-	api.InstallerGenerateClusterISOHandler = installer.GenerateClusterISOHandlerFunc(func(params installer.GenerateClusterISOParams, principal interface{}) middleware.Responder {
+	api.ImagesGenerateClusterISOHandler = images.GenerateClusterISOHandlerFunc(func(params images.GenerateClusterISOParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
-		return c.InstallerAPI.GenerateClusterISO(ctx, params)
+		return c.ImagesAPI.GenerateClusterISO(ctx, params)
 	})
 	api.InstallerGetClusterHandler = installer.GetClusterHandlerFunc(func(params installer.GetClusterParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
@@ -444,6 +465,11 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.GetHostRequirements(ctx, params)
+	})
+	api.ImagesGetImageHandler = images.GetImageHandlerFunc(func(params images.GetImageParams, principal interface{}) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		ctx = storeAuth(ctx, principal)
+		return c.ImagesAPI.GetImage(ctx, params)
 	})
 	api.InstallerGetNextStepsHandler = installer.GetNextStepsHandlerFunc(func(params installer.GetNextStepsParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
@@ -499,6 +525,11 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.ListHosts(ctx, params)
+	})
+	api.ImagesListImagesHandler = images.ListImagesHandlerFunc(func(params images.ListImagesParams, principal interface{}) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		ctx = storeAuth(ctx, principal)
+		return c.ImagesAPI.ListImages(ctx, params)
 	})
 	api.ManagedDomainsListManagedDomainsHandler = managed_domains.ListManagedDomainsHandlerFunc(func(params managed_domains.ListManagedDomainsParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()

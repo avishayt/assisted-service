@@ -18,6 +18,9 @@ import (
 // swagger:model image-create-params
 type ImageCreateParams struct {
 
+	// discovery overrides
+	DiscoveryOverrides string `json:"discovery_overrides,omitempty"`
+
 	// SSH public key for debugging the installation.
 	SSHPublicKey string `json:"ssh_public_key,omitempty"`
 

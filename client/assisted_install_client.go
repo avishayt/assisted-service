@@ -16,6 +16,7 @@ import (
 	"github.com/openshift/assisted-service/client/assisted_service_iso"
 	"github.com/openshift/assisted-service/client/bootfiles"
 	"github.com/openshift/assisted-service/client/events"
+	"github.com/openshift/assisted-service/client/images"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/client/managed_domains"
 	"github.com/openshift/assisted-service/client/manifests"
@@ -67,6 +68,7 @@ func New(c Config) *AssistedInstall {
 	cli.AssistedServiceIso = assisted_service_iso.New(transport, strfmt.Default, c.AuthInfo)
 	cli.Bootfiles = bootfiles.New(transport, strfmt.Default, c.AuthInfo)
 	cli.Events = events.New(transport, strfmt.Default, c.AuthInfo)
+	cli.Images = images.New(transport, strfmt.Default, c.AuthInfo)
 	cli.Installer = installer.New(transport, strfmt.Default, c.AuthInfo)
 	cli.ManagedDomains = managed_domains.New(transport, strfmt.Default, c.AuthInfo)
 	cli.Manifests = manifests.New(transport, strfmt.Default, c.AuthInfo)
@@ -79,6 +81,7 @@ type AssistedInstall struct {
 	AssistedServiceIso *assisted_service_iso.Client
 	Bootfiles          *bootfiles.Client
 	Events             *events.Client
+	Images             *images.Client
 	Installer          *installer.Client
 	ManagedDomains     *managed_domains.Client
 	Manifests          *manifests.Client

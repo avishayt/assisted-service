@@ -37,9 +37,6 @@ type API interface {
 	   DownloadClusterFiles Downloads files relating to the installed/installing cluster.*/
 	DownloadClusterFiles(ctx context.Context, params *DownloadClusterFilesParams, writer io.Writer) (*DownloadClusterFilesOK, error)
 	/*
-	   DownloadClusterISO Downloads the OpenShift per-cluster Discovery ISO.*/
-	DownloadClusterISO(ctx context.Context, params *DownloadClusterISOParams, writer io.Writer) (*DownloadClusterISOOK, error)
-	/*
 	   DownloadClusterKubeconfig Downloads the kubeconfig file for this cluster.*/
 	DownloadClusterKubeconfig(ctx context.Context, params *DownloadClusterKubeconfigParams, writer io.Writer) (*DownloadClusterKubeconfigOK, error)
 	/*
@@ -54,9 +51,6 @@ type API interface {
 	/*
 	   EnableHost Enables a host for inclusion in the cluster.*/
 	EnableHost(ctx context.Context, params *EnableHostParams) (*EnableHostOK, error)
-	/*
-	   GenerateClusterISO Creates a new OpenShift per-cluster Discovery ISO.*/
-	GenerateClusterISO(ctx context.Context, params *GenerateClusterISOParams) (*GenerateClusterISOCreated, error)
 	/*
 	   GetCluster Retrieves the details of the OpenShift cluster.*/
 	GetCluster(ctx context.Context, params *GetClusterParams) (*GetClusterOK, error)
@@ -321,31 +315,6 @@ func (a *Client) DownloadClusterFiles(ctx context.Context, params *DownloadClust
 }
 
 /*
-DownloadClusterISO Downloads the OpenShift per-cluster Discovery ISO.
-*/
-func (a *Client) DownloadClusterISO(ctx context.Context, params *DownloadClusterISOParams, writer io.Writer) (*DownloadClusterISOOK, error) {
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "DownloadClusterISO",
-		Method:             "GET",
-		PathPattern:        "/clusters/{cluster_id}/downloads/image",
-		ProducesMediaTypes: []string{"application/octet-stream"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &DownloadClusterISOReader{formats: a.formats, writer: writer},
-		AuthInfo:           a.authInfo,
-		Context:            ctx,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*DownloadClusterISOOK), nil
-
-}
-
-/*
 DownloadClusterKubeconfig Downloads the kubeconfig file for this cluster.
 */
 func (a *Client) DownloadClusterKubeconfig(ctx context.Context, params *DownloadClusterKubeconfigParams, writer io.Writer) (*DownloadClusterKubeconfigOK, error) {
@@ -467,31 +436,6 @@ func (a *Client) EnableHost(ctx context.Context, params *EnableHostParams) (*Ena
 		return nil, err
 	}
 	return result.(*EnableHostOK), nil
-
-}
-
-/*
-GenerateClusterISO Creates a new OpenShift per-cluster Discovery ISO.
-*/
-func (a *Client) GenerateClusterISO(ctx context.Context, params *GenerateClusterISOParams) (*GenerateClusterISOCreated, error) {
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "GenerateClusterISO",
-		Method:             "POST",
-		PathPattern:        "/clusters/{cluster_id}/downloads/image",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &GenerateClusterISOReader{formats: a.formats},
-		AuthInfo:           a.authInfo,
-		Context:            ctx,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*GenerateClusterISOCreated), nil
 
 }
 

@@ -260,6 +260,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "description": "The corresponding OpenShift version for the boot file.",
             "name": "openshift_version",
             "in": "query",
             "required": true
@@ -1403,161 +1404,6 @@ func init() {
             "description": "Success.",
             "schema": {
               "$ref": "#/definitions/presigned"
-            }
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/clusters/{cluster_id}/downloads/image": {
-      "get": {
-        "security": [
-          {
-            "userAuth": [
-              "admin",
-              "read-only-admin",
-              "user"
-            ]
-          }
-        ],
-        "description": "Downloads the OpenShift per-cluster Discovery ISO.",
-        "produces": [
-          "application/octet-stream"
-        ],
-        "tags": [
-          "installer"
-        ],
-        "operationId": "DownloadClusterISO",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster whose ISO should be downloaded.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "type": "string",
-              "format": "binary"
-            }
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed."
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new OpenShift per-cluster Discovery ISO.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "GenerateClusterISO",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster whose ISO should be generated.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "The parameters for the generated ISO.",
-            "name": "image-create-params",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/image-create-params"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/cluster"
             }
           },
           "400": {
@@ -3153,6 +2999,372 @@ func init() {
           },
           "405": {
             "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves the list of Discovery ISOs.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "ListImages",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster whose images should be listed.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a new OpenShift per-cluster Discovery ISO.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "GenerateClusterISO",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster to create an image for.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "The parameters for the new image.",
+            "name": "image-create-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/image-create-params"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images/{image_id}": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves the Discovery ISO metadata.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "GetImage",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image metadata to be retrieved.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image whose metadata should be retrieved.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a Discovery ISO.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "DeleteImage",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image to be deleted.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image to be deleted.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images/{image_id}/data": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Downloads the OpenShift per-cluster Discovery ISO.",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "images"
+        ],
+        "operationId": "DownloadClusterISO",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image to be downloaded.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image to be downloaded.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -4184,7 +4396,6 @@ func init() {
         "kind",
         "id",
         "href",
-        "image_info",
         "status",
         "status_info"
       ],
@@ -4294,10 +4505,6 @@ func init() {
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\"",
           "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
-        },
-        "image_info": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
-          "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
           "description": "The virtual IP used for cluster ingress traffic.",
@@ -5141,12 +5348,12 @@ func init() {
       "type": "object",
       "required": [
         "path",
-        "duration_threshold",
+        "duration_threshold_ms",
         "exit_code"
       ],
       "properties": {
-        "duration_threshold": {
-          "description": "The maximal fdatasync duration that is considered acceptable.",
+        "duration_threshold_ms": {
+          "description": "The maximal fdatasync duration in ms that is considered acceptable.",
           "type": "integer"
         },
         "exit_code": {
@@ -5165,6 +5372,10 @@ func init() {
         "io_sync_duration": {
           "description": "The 99th percentile of fdatasync durations in milliseconds.",
           "type": "integer"
+        },
+        "path": {
+          "description": "The device path.",
+          "type": "string"
         }
       }
     },
@@ -5580,9 +5791,82 @@ func init() {
         }
       ]
     },
+    "image": {
+      "type": "object",
+      "required": [
+        "id",
+        "state",
+        "created_at",
+        "expires_at"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this host is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "discovery_overrides": {
+          "type": "string"
+        },
+        "download_url": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "href": {
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier of the object.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primary_key\""
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "Image"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer"
+        },
+        "ssh_public_key": {
+          "description": "SSH public key for debugging the installation.",
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "creating",
+            "ready",
+            "expired"
+          ]
+        },
+        "static_ips_config": {
+          "description": "statip ips configuration string in the format expected by discovery ignition",
+          "type": "string"
+        }
+      }
+    },
     "image-create-params": {
       "type": "object",
       "properties": {
+        "discovery_overrides": {
+          "type": "string"
+        },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation.",
           "type": "string"
@@ -5595,37 +5879,10 @@ func init() {
         }
       }
     },
-    "image_info": {
-      "type": "object",
-      "properties": {
-        "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "download_url": {
-          "type": "string"
-        },
-        "expires_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "generator_version": {
-          "description": "Image generator version.",
-          "type": "string"
-        },
-        "size_bytes": {
-          "type": "integer"
-        },
-        "ssh_public_key": {
-          "description": "SSH public key for debugging the installation.",
-          "type": "string"
-        },
-        "static_ips_config": {
-          "description": "statip ips configuration string in the format expected by discovery ignition",
-          "type": "string"
-        }
+    "image-list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/image"
       }
     },
     "infra_error": {
@@ -6155,6 +6412,10 @@ func init() {
       "name": "events"
     },
     {
+      "description": "Images that run the Assisted agent for discovery.",
+      "name": "images"
+    },
+    {
       "description": "General OpenShift cluster installation APIs.",
       "name": "installer"
     },
@@ -6415,6 +6676,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "description": "The corresponding OpenShift version for the boot file.",
             "name": "openshift_version",
             "in": "query",
             "required": true
@@ -7558,161 +7820,6 @@ func init() {
             "description": "Success.",
             "schema": {
               "$ref": "#/definitions/presigned"
-            }
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/clusters/{cluster_id}/downloads/image": {
-      "get": {
-        "security": [
-          {
-            "userAuth": [
-              "admin",
-              "read-only-admin",
-              "user"
-            ]
-          }
-        ],
-        "description": "Downloads the OpenShift per-cluster Discovery ISO.",
-        "produces": [
-          "application/octet-stream"
-        ],
-        "tags": [
-          "installer"
-        ],
-        "operationId": "DownloadClusterISO",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster whose ISO should be downloaded.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "type": "string",
-              "format": "binary"
-            }
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed."
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new OpenShift per-cluster Discovery ISO.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "GenerateClusterISO",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster whose ISO should be generated.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "The parameters for the generated ISO.",
-            "name": "image-create-params",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/image-create-params"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/cluster"
             }
           },
           "400": {
@@ -9308,6 +9415,372 @@ func init() {
           },
           "405": {
             "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves the list of Discovery ISOs.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "ListImages",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster whose images should be listed.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a new OpenShift per-cluster Discovery ISO.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "GenerateClusterISO",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster to create an image for.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "The parameters for the new image.",
+            "name": "image-create-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/image-create-params"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images/{image_id}": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves the Discovery ISO metadata.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "GetImage",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image metadata to be retrieved.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image whose metadata should be retrieved.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/image"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a Discovery ISO.",
+        "tags": [
+          "images"
+        ],
+        "operationId": "DeleteImage",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image to be deleted.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image to be deleted.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/images/{image_id}/data": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Downloads the OpenShift per-cluster Discovery ISO.",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "images"
+        ],
+        "operationId": "DownloadClusterISO",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster associated with the image to be downloaded.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The image to be downloaded.",
+            "name": "image_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -10427,7 +10900,6 @@ func init() {
         "kind",
         "id",
         "href",
-        "image_info",
         "status",
         "status_info"
       ],
@@ -10537,10 +11009,6 @@ func init() {
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\"",
           "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
-        },
-        "image_info": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
-          "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
           "description": "The virtual IP used for cluster ingress traffic.",
@@ -11344,12 +11812,12 @@ func init() {
       "type": "object",
       "required": [
         "path",
-        "duration_threshold",
+        "duration_threshold_ms",
         "exit_code"
       ],
       "properties": {
-        "duration_threshold": {
-          "description": "The maximal fdatasync duration that is considered acceptable.",
+        "duration_threshold_ms": {
+          "description": "The maximal fdatasync duration in ms that is considered acceptable.",
           "type": "integer"
         },
         "exit_code": {
@@ -11368,6 +11836,10 @@ func init() {
         "io_sync_duration": {
           "description": "The 99th percentile of fdatasync durations in milliseconds.",
           "type": "integer"
+        },
+        "path": {
+          "description": "The device path.",
+          "type": "string"
         }
       }
     },
@@ -11783,9 +12255,83 @@ func init() {
         }
       ]
     },
+    "image": {
+      "type": "object",
+      "required": [
+        "id",
+        "state",
+        "created_at",
+        "expires_at"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this host is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "discovery_overrides": {
+          "type": "string"
+        },
+        "download_url": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "href": {
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier of the object.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primary_key\""
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "Image"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ssh_public_key": {
+          "description": "SSH public key for debugging the installation.",
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "creating",
+            "ready",
+            "expired"
+          ]
+        },
+        "static_ips_config": {
+          "description": "statip ips configuration string in the format expected by discovery ignition",
+          "type": "string"
+        }
+      }
+    },
     "image-create-params": {
       "type": "object",
       "properties": {
+        "discovery_overrides": {
+          "type": "string"
+        },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation.",
           "type": "string"
@@ -11798,38 +12344,10 @@ func init() {
         }
       }
     },
-    "image_info": {
-      "type": "object",
-      "properties": {
-        "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "download_url": {
-          "type": "string"
-        },
-        "expires_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "generator_version": {
-          "description": "Image generator version.",
-          "type": "string"
-        },
-        "size_bytes": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "ssh_public_key": {
-          "description": "SSH public key for debugging the installation.",
-          "type": "string"
-        },
-        "static_ips_config": {
-          "description": "statip ips configuration string in the format expected by discovery ignition",
-          "type": "string"
-        }
+    "image-list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/image"
       }
     },
     "infra_error": {
@@ -12357,6 +12875,10 @@ func init() {
     {
       "description": "Events related to a cluster installation.",
       "name": "events"
+    },
+    {
+      "description": "Images that run the Assisted agent for discovery.",
+      "name": "images"
     },
     {
       "description": "General OpenShift cluster installation APIs.",

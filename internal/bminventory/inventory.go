@@ -2117,7 +2117,7 @@ func (b *bareMetalInventory) RegisterHost(ctx context.Context, params installer.
 		}
 	}
 
-	url := installer.GetHostURL{ClusterID: params.ClusterID, HostID: *params.NewHostParams.HostID}
+	url := installer.GetResourceURL{ClusterID: params.ClusterID, ResourceID: *params.NewHostParams.HostID, ResourceType: "hosts"}
 	kind := swag.String(models.HostKindHost)
 	switch swag.StringValue(cluster.Kind) {
 	case models.ClusterKindAddHostsCluster:
@@ -4101,7 +4101,7 @@ func (b *bareMetalInventory) createInstalledOCPHosts(ctx context.Context, cluste
 			continue
 		}
 		id := strfmt.UUID(uuid.New().String())
-		url := installer.GetHostURL{ClusterID: *cluster.ID, HostID: id}
+		url := installer.GetResourceURL{ClusterID: *cluster.ID, ResourceID: id, ResourceType: "hosts"}
 		hostname := node.Name
 		role := k8sclient.GetNodeRole(&node)
 
@@ -4168,17 +4168,4 @@ func (b *bareMetalInventory) setPullSecretFromOCP(cluster *common.Cluster, log l
 	}
 	setPullSecret(cluster, pullSecret)
 	return nil
-}
-
-func formatStaticIPs(staticIpsConfig []*models.StaticIPConfig) string {
-	lines := make([]string, len(staticIpsConfig))
-
-	// construct static IPs config string
-	for i, entry := range staticIpsConfig {
-		lines[i] = fmt.Sprintf("%s;%s;%s;%s;%s", entry.Mac, entry.IP, entry.Mask, entry.DNS, entry.Gateway)
-	}
-
-	sort.Strings(lines)
-
-	return strings.Join(lines, "\n")
 }
